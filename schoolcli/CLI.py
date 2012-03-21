@@ -1,6 +1,7 @@
 #!/usr/bin/python3.2
 
 import sys
+from os import path
 import readline
 
 from CLIItem import *
@@ -9,13 +10,12 @@ class CLI:
   _started       = False
   _history_file  = None
 
-  _reading_input = False
-
   _items         = []         # List with all available CLI items
   _matches       = []         # Current matches if you press tab while typing
 
   def __init__( self, history_file = None ):
-    self._history_file = history_file
+    if history_file is not None:
+      self._history_file = path.expanduser( history_file )
     readline.set_completer( self._Complete )
     readline.parse_and_bind( "tab: complete" )
 
@@ -30,11 +30,10 @@ class CLI:
     line_input = ""
     while self._started:
       try:
-        self._reading_input = True
         line_input = input( self._prompt )
-        self._reading_input = False
       except EOFError:
-        self._reading_input = False
+        self.Stop( )
+      except KeyboardInterrupt:
         self.Stop( )
 
       if self._started and line_input != "":
@@ -43,9 +42,8 @@ class CLI:
   def Stop( self ):
     if self._history_file is not None:
       readline.write_history_file( self._history_file )
-      self._started = False
-      #if self._reading_input:
-        #pass
+    self._started = False
+    print( ) # To break shell prompt to a new line
 
   def _Complete( self, line, state ):
     if state == 0:

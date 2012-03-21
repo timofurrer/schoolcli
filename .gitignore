@@ -2,4 +2,7 @@
 schoolcli/__pycache__
 
 # Python bytecode
-schoolcli/*.pyc
+*.pyc
+
+# Vim swap files
+*.swp
