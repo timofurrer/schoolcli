@@ -1,0 +1,5 @@
+# Python cache files
+schoolcli/__pycache__
+
+# Python bytecode
+schoolcli/*.pyc
