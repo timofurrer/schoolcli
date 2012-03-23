@@ -8,7 +8,7 @@ class CLIItem:
   _subitems   = []
   _split_char = " "
 
-  def __init__( self, name, function, value = None, enabled = True, subitems = [], split_char = " " ):
+  def __init__( self, name, function = None, value = None, enabled = True, subitems = [], split_char = " " ):
     self._name       = name
     self._function   = function
     self._value      = value
@@ -58,17 +58,30 @@ class CLIItem:
 
   def Complete( self, line ):
     matches = []
-    if line.startswith( self._name ):
+    if line.startswith( self._name + self._split_char ):
       cmd, arg = line.split( self._split_char, 1 )
       for s in self._subitems:
         for i in s.Complete( arg ):
           matches.append( i )
-    elif self._name.startswith( line ):
+    elif (self._name + self._split_char).startswith( line ):
       matches.append( self )
     return matches
 
-  def Call( self, line ):
-    if self._function is not None:
-      return self._function
+  def GetItemByCLILine( self, line ):
+    if line.startswith( self._name + self._split_char ):
+      item, args = line.split( self._split_char, 1 )
+      if args == "":
+        return self, args
+      else:
+        for i in self._subitems:
+          subitem, subargs = i.GetItemByCLILine( args )
+          if subitem is not None:
+            if subitem.GetFunction( ) is not None:
+              return subitem, subargs
+            else:
+              return self, args
+        return self, args
+    elif self._name == line:
+      return self, ""
     else:
-      return None
+      return None, line

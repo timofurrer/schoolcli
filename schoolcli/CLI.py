@@ -45,17 +45,15 @@ class CLI:
         print( ) # To break shell prompt to a new line
 
       if self._started and line_input != "":
-        print( "Called: {}".format( line_input ) )
-        cmd, args = line_input.split( " ", 1 )
-        item = self.GetItemByName( cmd )
+        item, args = self.GetItemByCLILine( line_input )
         if item is not None:
-          f = item.Call( line_input )
+          f = item.GetFunction( )
           if f is not None:
-            f( args, line_input )
+            f( item, args, line_input )
           else:
             print( "Item is not callable!" )
         else:
-          print( "Command is not available!" )
+          print( "Command can not be found!" )
 
   def Stop( self ):
     if self._history_file is not None:
@@ -102,3 +100,10 @@ class CLI:
       if i.GetName( ) == name:
         return i
     return None
+
+  def GetItemByCLILine( self, line ):
+    for i in self._items:
+      item, args = i.GetItemByCLILine( line )
+      if item is not None:
+        return item, args
+    return None, line
