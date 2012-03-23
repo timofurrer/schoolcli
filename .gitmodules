@@ -1,0 +1,3 @@
+[submodule "schoolcli/colorful"]
+	path = schoolcli/colorful
+	url = git@github.com:timofurrer/colorful.git
