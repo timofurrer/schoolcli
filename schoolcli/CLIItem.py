@@ -70,6 +70,9 @@ class CLIItem:
     else:
       return ""
 
+  def SetFunction( self, function ):
+    self._function = function
+
   def Enabled( self, enabled ):
     self._enabled = enabled
 
@@ -83,6 +86,7 @@ class CLIItem:
   def ClearItems( self ):
     for i in self._subitems:
       self._subitems.remove( i )
+    self._subitems = []
 
   def GetItems( self ):
     return self._subitems

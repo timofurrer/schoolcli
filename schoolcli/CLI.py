@@ -3,6 +3,7 @@
 import sys
 from os import path
 import readline
+import copy
 
 from CLIItem import *
 
@@ -110,6 +111,7 @@ class CLI:
   def RegisterItem( self, item ):
     if isinstance( item, CLIItem ):
       self._items.append( item )
+      self._UpdateHelpItem( )
       return True
     else:
       return False
@@ -117,6 +119,7 @@ class CLI:
   def ClearItems( self ):
     for i in self._items:
       self._items.remove( i )
+    self._UpdateHelpItem( )
 
   def GetItems( self ):
     return self._items
@@ -146,10 +149,20 @@ class CLI:
     for i in self._items:
       if i.GetName( ) == name:
         self._items.remove( i )
+    self._UpdateHelpItem( )
 
   def AddHelpItem( self ):
-    item = CLIItem( "help", self.ItemHelpScreen, category = "help" )
+    item = CLIItem( "help", self.ItemHelpScreen, category = "help", subitems = [] )
     self.RegisterItem( item )
+
+  def _UpdateHelpItem( self ):
+    item = self.GetItemByName( "help" )
+    if item is not None:
+      item.ClearItems( )
+      for i in self._items:
+        tmp = copy.copy( i )
+        tmp.SetFunction( None )
+        item.AppendItem( tmp )
 
   def ItemHelpScreen( self, item, args = "", line = "" ):
     """[command]||show this help screen"""
@@ -167,7 +180,7 @@ class CLI:
           sys.stdout.write( space + i.GetUsage( ) + " " * ( max_len_usage - len( i.GetUsage( ) ) ) )
           sys.stdout.write( space + i.GetHelpText( ) + "\n" )
     else:
-      item = self.GetItemByName( args )
+      item = self.GetItemByName( args.strip( ) )
       if item is not None:
         f = item.GetFunction( )
         if f is not None:
