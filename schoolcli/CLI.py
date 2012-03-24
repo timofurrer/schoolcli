@@ -7,7 +7,7 @@ import copy
 
 from CLIItem import *
 
-sys.path.insert( 0, "colorful/colorful" ) # Need to add Colorful
+sys.path.insert( 0, path.join( path.dirname( path.abspath( __file__ ) ), "colorful/colorful" ) ) # Need to add Colorful
 
 from Colorful import * # For colored output in chell
 
