@@ -156,14 +156,14 @@ class SchoolCLI( CLI ):
     space  = " " * 6
     wall = "|"
     if len( schools ) > 0:
-      max_len_id = len( max( [str( s.Id ) for s in schools], key = len ) )
-      max_len_name = len( max( [s.Name for s in schools], key = len ) )
+      max_len_id   = len( max( [str( s.Id ) for s in schools], key = len ) )
+      max_len_name = len( max( [s.Name for s in schools],      key = len ) )
 
-      print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " Name" + " " * (max_len_name - 4) ) )
+      print( indent + self._cf.bold_green( "Id" ) + " " * (max_len_id - 2) + space + wall + " " + self._cf.bold_green( "Name" ) )
       print( " " * 2 + "-" * (2 * len( space ) + max_len_id + max_len_name + 2 ) )
 
       for school in schools:
-        print( indent + str( school.Id ) + " " * (max_len_id - len( str( school.Id ) ) ) + space + " " + wall + " " + school.Name )
+        print( indent + str( school.Id ) + " " * (max_len_id - len( str( school.Id ) ) ) + space + wall + " " + school.Name )
     else:
       print( self._cf.bold_green( "There are no schools" ) )
 

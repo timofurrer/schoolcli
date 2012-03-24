@@ -51,7 +51,7 @@ class School:
           DELETE FROM School
             WHERE id = ?
         """
-        c.execute( delete, str( self._id ) )
+        c.execute( delete, [self._id] )
         self._connection.commit( )
         c.close( )
         return True
@@ -83,7 +83,7 @@ class School:
       try:
         school = None
         c = connection.cursor( )
-        c.execute( "SELECT * FROM School WHERE id = ?", id )
+        c.execute( "SELECT * FROM School WHERE id = ?", [id] )
         row = c.fetchone( )[0]
         school = School( connection, row["id"], row["name"] )
         c.close( )
