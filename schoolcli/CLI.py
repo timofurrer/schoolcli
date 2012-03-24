@@ -52,11 +52,13 @@ class CLI:
       try:
         line_input = input( self.GetPrompt( ) )
       except EOFError:          # Occures when Ctrl+D is pressed in shell
-        self.Stop( )
-        print( ) # To break shell prompt to a new line
+        print( )                # To break down the following question
+        y = input( "Do you really want to exit ([y]/n)? " )
+        if y == "y" or y == "":
+          self.Stop( )
       except KeyboardInterrupt: # Occures when Ctrl+C is pressed in shell
         self.Stop( )
-        print( ) # To break shell prompt to a new line
+        print( )                # To break shell prompt to a new line
 
       if self._started and line_input != "":
         item, args = self.GetItemByCLILine( line_input )
@@ -108,6 +110,12 @@ class CLI:
     sys.stdout.write( readline.get_line_buffer( ) )
     sys.stdout.flush( )
 
+  def SetLocation( self, location ):
+    self._location = location
+
+  def ParseLocation( self ):
+    return self._location.split( "/" )
+
   def RegisterItem( self, item ):
     if isinstance( item, CLIItem ):
       self._items.append( item )
@@ -133,9 +141,15 @@ class CLI:
   def GetItemsByCategory( self, category ):
     return [i for i in self._items if i.GetCategory( ) == category]
 
-  def SetItemsEnabledByCategory( self, enabled = True ):
+  def SetItemsEnabled( self, enabled = True ):
     for i in self._items:
-      i.Enabled( enabled )
+      if i.GetCategory( ) != "default":
+        i.Enabled( enabled )
+
+  def SetItemsEnabledByCategory( self, category, enabled = True ):
+    for i in self._items:
+      if i.GetCategory( ) == category:
+        i.Enabled( enabled )
 
   def GetItemByCLILine( self, line ):
     for i in self._items:
