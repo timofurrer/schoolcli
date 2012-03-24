@@ -225,7 +225,7 @@ class SchoolCLI( CLI ):
   def cmd_school( self, item, args, rawline ):
     """<add|remove>||add or remove a school"""
     sys.stdout.write( "Usage:" )
-    CLI.ItemHelpScreen( self, None, "school" )
+    CLI.HelpScreen( self, None, "school" )
 
   def cmd_school_add( self, item, args, rawline ):
     """-n <name>|-i||add a new school. Argument -n is to pass a name and -i for interactive mode"""
