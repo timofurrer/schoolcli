@@ -3,7 +3,7 @@
 
 ***
 
-**Author:** Timo Furrer< <timo.furrer@gmail.com><br />
+**Author:** Timo Furrer <timo.furrer@gmail.com><br />
 
 # Still in Work
 This program is still in work and not completed.
