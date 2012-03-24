@@ -1,13 +1,17 @@
 #!/usr/bin/python3.2
 
-class School:
-  _id         = None
-  _name       = None
-  _connection = None
+from School import *
 
-  def __init__( self, connection = None, id = None, name = None ):
+class Term:
+  _connection = None
+  _id         = None
+  _school     = None
+  _name       = None
+
+  def __init__( self, connection = None, id = None, school = None, name = None ):
     self._connection = connection
     self._id         = id
+    self._school     = school
     self._name       = name
 
   @property
@@ -26,15 +30,23 @@ class School:
   def Name( self, name ):
     self._name = name
 
+  @property
+  def School( self ):
+    return self._school
+
+  @School.setter
+  def School( self, school ):
+    self._school = school
+
   def Insert( self ):
     if self._connection is not None:
       try:
         c = self._connection.cursor( )
         insert = """
-          INSERT INTO School
-            VALUES( ?, ? )
+          INSERT INTO Term
+            VALUES( ?, ?, ? )
         """
-        c.execute( insert, (c.lastrowid, self._name) )
+        c.execute( insert, (c.lastrowid, self._school.Id, self._name) )
         self._connection.commit( )
         c.close( )
         return True
@@ -48,7 +60,7 @@ class School:
       try:
         c = self._connection.cursor( )
         delete = """
-          DELETE FROM School
+          DELETE FROM Term
             WHERE id = ?
         """
         c.execute( delete, str( self._id ) )
@@ -61,33 +73,20 @@ class School:
       return False
 
   @staticmethod
-  def GetSchools( connection ):
+  def GetTerms( connection ):
     if connection is not None:
       try:
-        schools = []
+        terms = []
         c = connection.cursor( )
-        c.execute( "SELECT * FROM School" )
+        c.execute( "SELECT * FROM Term" )
         rows = c.fetchall( )
 
         for row in rows:
-          schools.append( School( connection, row["id"], row["name"] ) )
+          school = School.GetSchoolById( connection, row["id"] )
+          if school is not None:
+            terms.append( Term( connection, row["id"], school, row["name"] ) )
         c.close( )
-        return schools
+        return terms
       except:
         return []
     return []
-
-  @staticmethod
-  def GetSchoolById( connection, id ):
-    if connection is not None:
-      try:
-        school = None
-        c = connection.cursor( )
-        c.execute( "SELECT * FROM School WHERE id = ?", id )
-        row = c.fetchone( )[0]
-        school = School( connection, row["id"], row["name"] )
-        c.close( )
-        return school
-      except:
-        return None
-    return None

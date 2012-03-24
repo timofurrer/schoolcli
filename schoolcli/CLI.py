@@ -32,6 +32,7 @@ class CLI:
     if history_file is not None:
       self._history_file = path.expanduser( history_file )
     self._welcome_text = welcome_text
+    self.AddAboutItem( )
 
   def Start( self ):
     if self._history_file is not None:
@@ -165,8 +166,15 @@ class CLI:
         self._items.remove( i )
     self._UpdateHelpItem( )
 
+  def AddAboutItem( self ):
+    self.RegisterItem( CLIItem( "about", self.AboutScreen, category = "default", subitems = [] ) )
+
+  def AboutScreen( self, item, args = "", line = "" ):
+    """show the about screen with copyright and author information"""
+    print( self._cf.bold_cyan( "(C) Copyright 2012 by Timo Furrer <timo.furrer@gmail.com>") )
+
   def AddHelpItem( self ):
-    item = CLIItem( "help", self.ItemHelpScreen, category = "help", subitems = [] )
+    item = CLIItem( "help", self.HelpScreen, category = "default", subitems = [] )
     self.RegisterItem( item )
 
   def _UpdateHelpItem( self ):
@@ -178,16 +186,17 @@ class CLI:
         tmp.SetFunction( None )
         item.AppendItem( tmp )
 
-  def ItemHelpScreen( self, item, args = "", line = "" ):
+  def HelpScreen( self, item, args = "", line = "" ):
     """[command]||show this help screen"""
+    items            = [i for i in self._items if i.IsEnabled( )]
     indent           = " " * 4
     space            = " " * 6
-    max_len_name     = len( max( [i.GetName( )     for i in self._items], key = len ) )
-    max_len_usage    = len( max( [i.GetUsage( )    for i in self._items], key = len ) )
-    max_len_helptext = len( max( [i.GetHelpText( ) for i in self._items], key = len ) )
+    max_len_name     = len( max( [i.GetName( )     for i in items], key = len ) )
+    max_len_usage    = len( max( [i.GetUsage( )    for i in items], key = len ) )
+    max_len_helptext = len( max( [i.GetHelpText( ) for i in items], key = len ) )
 
     if args == "":
-      for i in sorted( self._items, key = lambda i: i.GetName( ) ):
+      for i in sorted( items, key = lambda i: i.GetName( ) ):
         f = i.GetFunction( )
         if f is not None:
           sys.stdout.write( indent + self._cf.bold_green( i.GetName( ) ) + " " * ( max_len_name - len( i.GetName( ) ) ) )
@@ -196,10 +205,13 @@ class CLI:
     else:
       item = self.GetItemByName( args.strip( ) )
       if item is not None:
-        f = item.GetFunction( )
-        if f is not None:
-          print( indent + self._cf.bold_green( item.GetName( ) ) + space + item.GetUsage( ) + space + item.GetHelpText( ) )
+        if item.IsEnabled( ):
+          f = item.GetFunction( )
+          if f is not None:
+            print( indent + self._cf.bold_green( item.GetName( ) ) + space + item.GetUsage( ) + space + item.GetHelpText( ) )
+          else:
+            print( self._cf.bold_red( "Command has no function defined, so no help could be showed" ) )
         else:
-          print( self._cf.bold_red( "Command has no function defined, so no help could be showed" ) )
+          print( self._cf.bold_red( "Command can not be found" ) )
       else:
         print( self._cf.bold_red( "Command can not be found" ) )

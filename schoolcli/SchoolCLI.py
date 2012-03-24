@@ -6,6 +6,7 @@ import argparse
 
 from CLI import *
 from School import *
+from Term import *
 
 class SchoolCLI( CLI ):
   _connection = None
@@ -154,14 +155,33 @@ class SchoolCLI( CLI ):
     indent = " " * 4
     space  = " " * 6
     wall = "|"
-    max_len_id = len( max( [str( s.Id ) for s in schools], key = len ) )
-    max_len_name = len( max( [s.Name for s in schools], key = len ) )
+    if len( schools ) > 0:
+      max_len_id = len( max( [str( s.Id ) for s in schools], key = len ) )
+      max_len_name = len( max( [s.Name for s in schools], key = len ) )
 
-    print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " Name" + " " * (max_len_name - 4) ) )
-    print( " " * 2 + "-" * (2 * len( space ) + max_len_id + max_len_name + 2 ) )
+      print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " Name" + " " * (max_len_name - 4) ) )
+      print( " " * 2 + "-" * (2 * len( space ) + max_len_id + max_len_name + 2 ) )
 
-    for school in schools:
-      print( indent + str( school.Id ) + " " * (max_len_id - len( str( school.Id ) ) ) + space + " " + wall + " " + school.Name )
+      for school in schools:
+        print( indent + str( school.Id ) + " " * (max_len_id - len( str( school.Id ) ) ) + space + " " + wall + " " + school.Name )
+    else:
+      print( self._cf.bold_green( "There are no schools" ) )
+
+  def PrintTermTable( self, terms ):
+    indent = " " * 4
+    space  = " " * 6
+    wall = "|"
+    if len( terms ) > 0:
+      max_len_id          = len( max( [str( t.Id ) for t in terms],   key = len ) )
+      max_len_school_name = len( max( [t.School.Name for t in terms], key = len ) )
+      max_len_name        = len( max( [t.Name for t in terms],        key = len ) )
+
+      print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " School" + " " * (max_len_school_name - 7) + space + wall + " Name" + " " * (max_len_name - 4) ) )
+      print( " " * 2 + "-" * (3 * len( space ) + max_len_id + max_len_school_name + max_len_name + 4 ) )
+
+      # TODO: Print table
+    else:
+      print( self._cf.bold_green( "There are no terms" ) )
 
   def cmd_cd( self, item, args, rawline ):
     """[location|..]||change current location. You can go into schools, terms and subjects"""
@@ -195,6 +215,8 @@ class SchoolCLI( CLI ):
     location = self.GetSchoolLocation( )
     if location == "root":
       self.PrintSchoolTable( School.GetSchools( self._connection ) )
+    elif location[0] == "school":
+      self.PrintTermTable( Term.GetTerms( self._connection ) )
 
   def cmd_pwd( self, item, args, rawline ):
     """print the working directory ( location )"""
@@ -305,4 +327,6 @@ class SchoolCLI( CLI ):
 
   def cmd_exit( self, item, args, rawline ):
     """exit from the schoolcli"""
-    CLI.Stop( self )
+    y = input( "Do you really want to exit ([y]/n)? " )
+    if y == "y" or y == "":
+      CLI.Stop( self )
