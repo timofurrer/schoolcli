@@ -4,11 +4,12 @@ import os
 import sqlite3
 import argparse
 
-from CLI import *
-from School import *
-from Term import *
-from Subject import *
+from CLI         import *
+from School      import *
+from Term        import *
+from Subject     import *
 from Termsubject import *
+from Mark        import *
 
 class SchoolCLI( CLI ):
   _connection = None
@@ -195,7 +196,7 @@ class SchoolCLI( CLI ):
       max_len_name        = len( max( [t.Name for t in terms],        key = len ) )
 
       if len( "Id" ) > max_len_id:
-        max_len_id = len( "Id ")
+        max_len_id = len( "Id")
       if len( "School" ) > max_len_school_name:
         max_len_school_name = len( "School" )
       if len( "Name" ) > max_len_name:
@@ -220,7 +221,7 @@ class SchoolCLI( CLI ):
       max_len_shortcut    = len( max( [s.Shortcut for s in subjects],    key = len ) )
 
       if len( "Id" ) > max_len_id:
-        max_len_id = len( "Id ")
+        max_len_id = len( "Id")
       if len( "Name" ) > max_len_name:
         max_len_name = len( "Name" )
       if len( "Shortcut" ) > max_len_shortcut:
@@ -234,6 +235,50 @@ class SchoolCLI( CLI ):
         print( subject.Name + " " * (max_len_name - len( subject.Name ) ) + space + wall + " " + subject.Shortcut )
     else:
       print( self._cf.bold_green( "There are no subjects" ) )
+
+  def PrintMarkTable( self, marks ):
+    indent = " " * 4
+    space  = " " * 6
+    wall   = "|"
+    if len( marks ) > 0:
+      max_len_id          = len( max( [str( m.Id ) for m in marks],        key = len ) )
+      max_len_mark        = len( max( [str( m.Mark ) for m in marks],      key = len ) )
+      max_len_points      = len( max( [str( m.Points ) for m in marks],    key = len ) )
+      max_len_max_points  = len( max( [str( m.MaxPoints ) for m in marks], key = len ) )
+      max_len_valuation   = len( max( [str( m.Valuation ) for m in marks], key = len ) )
+      max_len_avarage     = len( max( [str( m.Avarage ) for m in marks],   key = len ) )
+      max_len_date        = len( max( [str( m.Date ) for m in marks],      key = len ) )
+
+      if len( "Id" ) > max_len_id:
+        max_len_id = len( "Id")
+      if len( "Mark" ) > max_len_mark:
+        max_len_mark = len( "Mark")
+      if len( "Points" ) > max_len_points:
+        max_len_points = len( "Points")
+      if len( "Max Points" ) > max_len_max_points:
+        max_len_max_points = len( "Max Points")
+      if len( "Valuation" ) > max_len_valuation:
+        max_len_valuation = len( "Valuation")
+      if len( "Avarage" ) > max_len_avarage:
+        max_len_avarage = len( "Avarage")
+      if len( "Date" ) > max_len_date:
+        max_len_date = len( "Date")
+
+      sys.stdout.write( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " " + "Mark" + " " * (max_len_mark - 4) + space + wall + " " ) )
+      sys.stdout.write( self._cf.bold_green( "Points" + " " * (max_len_points - 6) + space + wall + " " + "Max Points" + " " * (max_len_max_points - 10) + space + wall + " " ) )
+      print( self._cf.bold_green( "Valuation" + " " * (max_len_valuation - 9) + space + wall + " " + "Avarage" + " " * (max_len_avarage - 7) + space + wall + " " + "Date" ) )
+      print( " " * 2 + "-" * (6 * len( space ) + max_len_id + max_len_mark + max_len_points + max_len_max_points + max_len_valuation + max_len_avarage + max_len_date + 6 * len( wall ) + 12 * len( " " ) ) )
+
+      for mark in marks:
+        sys.stdout.write( indent + str( mark.Id ) + " " * (max_len_id - len( str( mark.Id ) ) ) + space + wall + " " )
+        sys.stdout.write( str( mark.Mark ) + " " * (max_len_mark - len( str( mark.Mark ) ) ) + space + wall + " " )
+        sys.stdout.write( str( mark.Points ) + " " * (max_len_points - len( str( mark.Points ) ) ) + space + wall + " " )
+        sys.stdout.write( str( mark.MaxPoints ) + " " * (max_len_max_points - len( str( mark.MaxPoints ) ) ) + space + wall + " " )
+        sys.stdout.write( str( mark.Valuation ) + " " * (max_len_valuation - len( str( mark.Valuation ) ) ) + space + wall + " " )
+        sys.stdout.write( str( mark.Avarage ) + " " * (max_len_avarage - len( str( mark.Avarage ) ) ) + space + wall + " " )
+        print( str( mark.Date ) + " " * (max_len_date - len( str( mark.Date ) ) ) )
+    else:
+      print( self._cf.bold_green( "There are no marks" ) )
 
   def cmd_cd( self, item, args, rawline ):
     """[location|..]||change current location. You can go into schools, terms and subjects"""
@@ -291,6 +336,8 @@ class SchoolCLI( CLI ):
       self.PrintTermTable( Term.GetTermsBySchool( self._connection, CLI.GetLocationValue( self ) ) )
     elif location == "term":
       self.PrintSubjectTable( Subject.GetSubjectsByTerm( self._connection, CLI.GetLocationValue( self ) ) )
+    elif location == "subject":
+      self.PrintMarkTable( Mark.GetMarksByTermsubject( self._connection, CLI.GetLocationValue( self ) ) )
 
   def cmd_pwd( self, item, args, rawline ):
     """print the working directory ( location )"""
@@ -618,13 +665,95 @@ class SchoolCLI( CLI ):
       pass
 
   def cmd_mark( self, item, args, rawline ):
-    pass
+    """<add|remove>||add or remove a mark"""
+    sys.stdout.write( "Usage:" )
+    CLI.HelpScreen( self, None, "mark" )
 
   def cmd_mark_add( self, item, args, rawline ):
-    pass
+    """add a new mark - Everytime in interactive mode"""
+
+    mark_input = ""
+    points     = None
+    max_points = None
+    valuation  = -1
+    avarage    = None
+    date       = None
+    save = True
+    try:
+      while mark_input == "":
+        mark_input = input( "Mark: " )
+      points       = input( "Points []: " )
+      max_points   = input( "Max Points []: " )
+      while valuation < 0 or valuation > 100:
+        valuation    = input( "Valuation (In %) [100]: " )
+        if valuation == "":
+          valuation == 100
+          break
+        try:
+          valuation = float( valuation )
+        except ValueError:
+          valuation = -1
+          continue
+
+      avarage      = input( "Avarage []: " )
+      date         = input( "Date []: " )
+      save         = input( "Do you want to save ([y]/n)? " )
+      save         = (save == "y" or save == "")
+    except KeyboardInterrupt:
+      save = False
+      print( "" ) # To break down prompt to a new line
+    if save:
+      mark             = Mark( self._connection )
+      mark.Termsubject = CLI.GetLocationValue( self )
+      mark.Mark        = mark_input
+      mark.Points      = points
+      mark.MaxPoints   = max_points
+      mark.valuation   = valuation
+      mark.avarage     = avarage
+      mark.date        = date
+      if mark.Insert( ):
+        print( self._cf.bold_green( "This mark has been successfully saved!" ) )
+        self._UpdateCDCommand( )
+      else:
+        print( self._cf.bold_red( "An error occured during the insert action of the mark" ) )
 
   def cmd_mark_remove( self, item, args, rawline ):
-    pass
+    """-s <id>|-i||remove a mark by id or in interactive mode"""
+    parser = argparse.ArgumentParser( prog = "mark remove", description = self.cmd_mark_remove.__doc__.split( "||" )[1] )
+    parser.add_argument( "-s", "--id", help = "set the id of the mark to remove" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      id = None
+      parsed_args = parser.parse_args( args.split( " " ) )
+      marks = Mark.GetMarksByTermsubject( self._connection, CLI.GetLocationValue( self ) )
+      print( marks )
+      available_ids = [str( m.Id ) for m in marks]
+      if parsed_args.interactive:
+        if len( marks ) == 0:
+          print( self._cf.white( "There are no marks to remove" ) )
+        else:
+          print( self._cf.bold_green( "Marks you can remove:" ) )
+          self.PrintMarkTable( marks )
+          try:
+            id = input( "Enter id of the mark to be removed: " )
+          except KeyboardInterrupt:
+            print( "" ) # To break down prompt to a new line
+      elif parsed_args.id is not None and parsed_args.id != "":
+        id = parsed_args.id
+
+      if id is not None:
+        if id in available_ids:
+          mark = [m for m in marks if str( m.Id ) == id][0]
+          if mark.Delete( ):
+            print( self._cf.bold_green( "Mark with id `{}` has been successfully removed".format( id ) ) )
+            self._UpdateCDCommand( )
+          else:
+            print( self._cf.bold_red( "An error occured during delete action of mark with id `{}`".format( id ) ) )
+        else:
+          print( self._cf.bold_red( "Mark with id `{}` does not exist".format( id ) ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
 
   def cmd_exit( self, item, args, rawline ):
     """exit from the schoolcli"""
