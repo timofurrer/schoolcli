@@ -90,3 +90,36 @@ class Term:
       except:
         return []
     return []
+
+  @staticmethod
+  def GetTermsBySchool( connection, school ):
+    if connection is not None:
+      try:
+        terms = []
+        c = connection.cursor( )
+        c.execute( "SELECT * FROM Term WHERE school = ?", [school.Id] )
+        rows = c.fetchall( )
+
+        for row in rows:
+          terms.append( Term( connection, row["id"], school, row["name"] ) )
+        c.close( )
+        return terms
+      except:
+        return []
+    return []
+
+  @staticmethod
+  def GetTermByName( connection, name ):
+    if connection is not None:
+      try:
+        school = None
+        c = connection.cursor( )
+        c.execute( "SELECT * FROM Term WHERE name = ?", [name] )
+        row = c.fetchall( )[0]
+        school = School.GetSchoolById( connection, row["school"] )
+        term = Term( connection, row["id"], school, row["name"] )
+        c.close( )
+        return term
+      except:
+        return None
+    return None

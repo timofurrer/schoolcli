@@ -7,6 +7,8 @@ import argparse
 from CLI import *
 from School import *
 from Term import *
+from Subject import *
+from Termsubject import *
 
 class SchoolCLI( CLI ):
   _connection = None
@@ -60,6 +62,8 @@ class SchoolCLI( CLI ):
     subject = CLIItem( "subject", self.cmd_subject, category = "subject", subitems = [] )
     subject.AppendItem( CLIItem( "add", self.cmd_subject_add, category = "subject" ) )
     subject.AppendItem( CLIItem( "remove", self.cmd_subject_remove, category = "subject" ) )
+    subject.AppendItem( CLIItem( "link", self.cmd_subject_link, category = "subject" ) )
+    subject.AppendItem( CLIItem( "unlink", self.cmd_subject_unlink, category = "subject" ) )
     CLI.RegisterItem( self, subject )
 
   def AddMarkCommands( self ):
@@ -69,8 +73,8 @@ class SchoolCLI( CLI ):
     CLI.RegisterItem( self, mark )
 
   def _UpdateCDCommand( self ):
-    location = self.GetSchoolLocation( )
-    item     = CLI.GetItemByName( self, "cd" )
+    location, value = self.GetSchoolLocation( )
+    item            = CLI.GetItemByName( self, "cd" )
     if item is not None:
       item.ClearItems( )
       item.AppendItem( CLIItem( "/", value = "/", category = "default" ) )
@@ -79,6 +83,14 @@ class SchoolCLI( CLI ):
         school_names = [s.Name for s in School.GetSchools( self._connection )]
         for school_name in school_names:
           item.AppendItem( CLIItem( school_name, value = school_name, category = "default" ) )
+      if location == "school":
+        term_names = [t.Name for t in Term.GetTermsBySchool( self._connection, CLI.GetLocationValue( self ) )]
+        for term_name in term_names:
+          item.AppendItem( CLIItem( term_name, value = term_name, category = "default" ) )
+      if location == "term":
+        subject_names = [s.Shortcut for s in Subject.GetSubjectsByTerm( self._connection, CLI.GetLocationValue( self ) )]
+        for subject_name in subject_names:
+          item.AppendItem( CLIItem( subject_name, value = subject_name, category = "default" ) )
 
   def SetupDatabase( self ):
     self._connection = sqlite3.connect( self._database )
@@ -118,14 +130,14 @@ class SchoolCLI( CLI ):
     create_mark_table = """
     CREATE TABLE IF NOT EXISTS Mark (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject INTEGER NOT NULL,
+    termsubject INTEGER NOT NULL,
     mark DOUBLE NOT NULL,
     points DOUBLE,
     max_points DOUBLE,
     valuation DOUBLE,
     avarage_mark DOUBLE,
     date DATE,
-    FOREIGN KEY( subject ) REFERENCES Subject( id )
+    FOREIGN KEY( termsubject ) REFERENCES Termsubject( id )
     );
     """
     c.execute( create_school_table )
@@ -143,21 +155,27 @@ class SchoolCLI( CLI ):
     location = CLI.ParseLocation( self )
     if len( location ) == 2:
       if location[0] == "" and location[1] == "":
-        return "root"
-      else:
-        return None
+        return "root", None
     elif len( location ) == 3:
       return "school", location[1]
-    else:
-      return None
+    elif len( location ) == 4:
+      return "term", location[2]
+    elif len( location ) == 5:
+      return "subject", location[3]
+    return None, None
 
   def PrintSchoolTable( self, schools ):
     indent = " " * 4
     space  = " " * 6
-    wall = "|"
+    wall   = "|"
     if len( schools ) > 0:
       max_len_id   = len( max( [str( s.Id ) for s in schools], key = len ) )
       max_len_name = len( max( [s.Name for s in schools],      key = len ) )
+
+      if len( "Id" ) > max_len_id:
+        max_len_id = len( "Id" )
+      if len( "Name" ) > max_len_name:
+        max_len_name = len( "Name" )
 
       print( indent + self._cf.bold_green( "Id" ) + " " * (max_len_id - 2) + space + wall + " " + self._cf.bold_green( "Name" ) )
       print( " " * 2 + "-" * (2 * len( space ) + max_len_id + max_len_name + 2 ) )
@@ -170,53 +188,109 @@ class SchoolCLI( CLI ):
   def PrintTermTable( self, terms ):
     indent = " " * 4
     space  = " " * 6
-    wall = "|"
+    wall   = "|"
     if len( terms ) > 0:
       max_len_id          = len( max( [str( t.Id ) for t in terms],   key = len ) )
       max_len_school_name = len( max( [t.School.Name for t in terms], key = len ) )
       max_len_name        = len( max( [t.Name for t in terms],        key = len ) )
 
-      print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " School" + " " * (max_len_school_name - 7) + space + wall + " Name" + " " * (max_len_name - 4) ) )
+      if len( "Id" ) > max_len_id:
+        max_len_id = len( "Id ")
+      if len( "School" ) > max_len_school_name:
+        max_len_school_name = len( "School" )
+      if len( "Name" ) > max_len_name:
+        max_len_name = len( "Name" )
+
+      print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " " + "School" + " " * (max_len_school_name - 7) + space + wall + " " + "Name" + " " * (max_len_name - 4) ) )
       print( " " * 2 + "-" * (3 * len( space ) + max_len_id + max_len_school_name + max_len_name + 4 ) )
 
-      # TODO: Print table
+      for term in terms:
+        sys.stdout.write( indent + str( term.Id ) + " " * (max_len_id - len( str( term.Id ) ) ) + space + wall + " " )
+        print( term.School.Name + " " * (max_len_school_name - len( term.School.Name ) ) + space + wall + " " + term.Name )
     else:
       print( self._cf.bold_green( "There are no terms" ) )
 
+  def PrintSubjectTable( self, subjects ):
+    indent = " " * 4
+    space  = " " * 6
+    wall   = "|"
+    if len( subjects ) > 0:
+      max_len_id          = len( max( [str( s.Id ) for s in subjects],   key = len ) )
+      max_len_name        = len( max( [s.Name for s in subjects],        key = len ) )
+      max_len_shortcut    = len( max( [s.Shortcut for s in subjects],    key = len ) )
+
+      if len( "Id" ) > max_len_id:
+        max_len_id = len( "Id ")
+      if len( "Name" ) > max_len_name:
+        max_len_name = len( "Name" )
+      if len( "Shortcut" ) > max_len_shortcut:
+        max_len_shortcut = len( "Shortcut" )
+
+      print( self._cf.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " " + "Name" + " " * (max_len_name - 4) + space + wall + " " + "Shortcut" ) )
+      print( " " * 2 + "-" * (3 * len( space ) + max_len_id + max_len_name + max_len_shortcut + 4 ) )
+
+      for subject in subjects:
+        sys.stdout.write( indent + str( subject.Id ) + " " * (max_len_id - len( str( subject.Id ) ) ) + space + wall + " " )
+        print( subject.Name + " " * (max_len_name - len( subject.Name ) ) + space + wall + " " + subject.Shortcut )
+    else:
+      print( self._cf.bold_green( "There are no subjects" ) )
+
   def cmd_cd( self, item, args, rawline ):
     """[location|..]||change current location. You can go into schools, terms and subjects"""
-    location = self.GetSchoolLocation( )
+    location, value = self.GetSchoolLocation( )
     args = args.strip( )
     if args == "" or args == "/":
-      CLI.SetLocation( self, "/" )
+      CLI.SetLocation( self, "/", "root" )
     elif args == "..":
+      # FIXME: Go back does not work yet
       location = CLI.ParseLocation( self )
       back_location = location[1:len( location ) - 2]
+      #if back_location[len( back_location ) - 1] != "/":
       back_location.append( "/" )
-      CLI.SetLocation( self, "/".join( back_location ) )
+      CLI.SetLocation( self, "/".join( back_location ), "root" )
     elif location == "root":
       schools = School.GetSchools( self._connection )
       school_names = [s.Name for s in schools]
       if args in school_names:
-        CLI.SetLocation( self, "/" + args + "/" )
+        CLI.SetLocation( self, "/" + args + "/", School.GetSchoolByName( self._connection, args ) )
       else:
-        print( self._cf.bold_red( "Could not change location because school with name `{}` could not be found".format( args ) ) )
+        print( self._cf.bold_red( "Could not change location because the school with the name `{}` could not be found".format( args ) ) )
+    elif location == "school":
+      terms = Term.GetTermsBySchool( self._connection, CLI.GetLocationValue( self ) )
+      term_names = [t.Name for t in terms]
+      if args in term_names:
+        CLI.SetLocation( self, self._location + args + "/", Term.GetTermByName( self._connection, args ) )
+      else:
+        print( self._cf.bold_red( "Could not change location because the term with the name `{}` could not be found in school `{}`".format( args, CLI.GetLocationValue( self ).Name ) ) )
+    elif location == "term":
+      subjects = Subject.GetSubjectsByTerm( self._connection, CLI.GetLocationValue( self ) )
+      subject_shortcuts = [s.Shortcut for s in subjects]
+      if args in subject_shortcuts:
+        CLI.SetLocation( self, self._location + args + "/", Termsubject.GetTermsubjectByTermAndSubject( self._connection, CLI.GetLocationValue( self ), Subject.GetSubjectByShortcut( self._connection, args ) ) )
+      else:
+        print( self._cf.bold_red( "Could not change location because the subject with the shortcut `{}` could not be found in term `{}`".format( args, CLI.GetLocationValue( self ).Name ) ) )
 
-    location = self.GetSchoolLocation( )
+    location, value = self.GetSchoolLocation( )
     CLI.SetItemsEnabled( self, False )
     if location == "root":
       CLI.SetItemsEnabledByCategory( self, "school" )
-    elif location[0] == "school":
+    elif location == "school":
       CLI.SetItemsEnabledByCategory( self, "term" )
+    elif location == "term":
+      CLI.SetItemsEnabledByCategory( self, "subject" )
+    elif location == "subject":
+      CLI.SetItemsEnabledByCategory( self, "mark" )
     self._UpdateCDCommand( )
 
   def cmd_ls( self, item, args, rawline ):
     """list the current location content like all schools or subjects"""
-    location = self.GetSchoolLocation( )
+    location, value = self.GetSchoolLocation( )
     if location == "root":
       self.PrintSchoolTable( School.GetSchools( self._connection ) )
-    elif location[0] == "school":
-      self.PrintTermTable( Term.GetTerms( self._connection ) )
+    elif location == "school":
+      self.PrintTermTable( Term.GetTermsBySchool( self._connection, CLI.GetLocationValue( self ) ) )
+    elif location == "term":
+      self.PrintSubjectTable( Subject.GetSubjectsByTerm( self._connection, CLI.GetLocationValue( self ) ) )
 
   def cmd_pwd( self, item, args, rawline ):
     """print the working directory ( location )"""
@@ -274,7 +348,7 @@ class SchoolCLI( CLI ):
       available_ids = [str( s.Id ) for s in schools]
       if parsed_args.interactive:
         if len( schools ) == 0:
-          print( self._cf.white( "There is no school to be removed" ) )
+          print( self._cf.white( "There is no school to remove" ) )
         else:
           print( self._cf.bold_green( "Schools you can remove:" ) )
           self.PrintSchoolTable( schools )
@@ -299,22 +373,249 @@ class SchoolCLI( CLI ):
       pass
 
   def cmd_term( self, item, args, rawline ):
-    pass
+    """<add|remove>||add or remove a term"""
+    sys.stdout.write( "Usage:" )
+    CLI.HelpScreen( self, None, "term" )
 
   def cmd_term_add( self, item, args, rawline ):
-    pass
+    """-n <name>|-i||add a new term. Argument -n is to pass a name and -i for interactive mode"""
+    parser = argparse.ArgumentParser( prog = "term add", description = self.cmd_term_add.__doc__.split( "||" )[1] )
+    parser.add_argument( "-n", "--name", help = "set the name of the new term" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      parsed_args = parser.parse_args( args.split( " " ) )
+      name = ""
+      save = True
+      if parsed_args.interactive:
+        try:
+          while name == "":
+            name = input( "Name: " )
+          save = input( "Do you want to save ([y]/n)? " )
+          save = (save == "y" or save == "")
+        except KeyboardInterrupt:
+          save = False
+          print( "" ) # To break down prompt to a new line
+      elif parsed_args.name != "" and parsed_args.name is not None:
+        name = parsed_args.name
+      else:
+        save = False
+      if save:
+        term = Term( self._connection )
+        term.School = CLI.GetLocationValue( self )
+        term.Name   = name
+        if term.Insert( ):
+          print( self._cf.bold_green( "Term with name `{}` has been successfully saved for school `{}`!".format( name, term.School.Name ) ) )
+          self._UpdateCDCommand( )
+        else:
+          print( self._cf.bold_red( "An error occured during the insert action of term with name `{}`".format( name ) ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
 
   def cmd_term_remove( self, item, args, rawline ):
-    pass
+    """-s <id>|-i||remove a term by id or in interactive mode"""
+    parser = argparse.ArgumentParser( prog = "term remove", description = self.cmd_term_remove.__doc__.split( "||" )[1] )
+    parser.add_argument( "-s", "--id", help = "set the id of the term to remove" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      id = None
+      parsed_args = parser.parse_args( args.split( " " ) )
+      terms = Term.GetTermsBySchool( self._connection, CLI.GetLocationValue( self ) )
+      available_ids = [str( t.Id ) for t in terms]
+      if parsed_args.interactive:
+        if len( terms ) == 0:
+          print( self._cf.white( "There is no term to remove" ) )
+        else:
+          print( self._cf.bold_green( "Terms you can remove:" ) )
+          self.PrintTermTable( terms )
+          try:
+            id = input( "Enter id of the term to be removed: " )
+          except KeyboardInterrupt:
+            print( "" ) # To break down prompt to a new line
+      elif parsed_args.id is not None and parsed_args.id != "":
+        id = parsed_args.id
+
+      if id is not None:
+        if id in available_ids:
+          term = [t for t in terms if str( t.Id ) == id][0]
+          if term.Delete( ):
+            print( self._cf.bold_green( "Term with id `{}` has been successfully removed".format( id ) ) )
+            self._UpdateCDCommand( )
+          else:
+            print( self._cf.bold_red( "An error occured during delete action of term with id `{}`".format( id ) ) )
+        else:
+          print( self._cf.bold_red( "Term with id `{}` does not exist".format( id ) ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
 
   def cmd_subject( self, item, args, rawline ):
-    pass
+    """<add|remove>|<link>|<unlink>||add, remove, link or unlink a subject"""
+    sys.stdout.write( "Usage:" )
+    CLI.HelpScreen( self, None, "subject" )
 
   def cmd_subject_add( self, item, args, rawline ):
-    pass
+    """-n <name> -s <shortcut>|-i||add a new subject. Argument -n is to pass a name and -s to pass a shortcut and -i for interactive mode"""
+    parser = argparse.ArgumentParser( prog = "subject add", description = self.cmd_subject_add.__doc__.split( "||" )[1] )
+    parser.add_argument( "-n", "--name", help = "set the name of the new subject" )
+    parser.add_argument( "-s", "--shortcut", help = "set the shortcut of the new subject" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      parsed_args = parser.parse_args( args.split( " " ) )
+      name     = ""
+      shortcut = ""
+      save     = True
+      if parsed_args.interactive:
+        try:
+          while name == "":
+            name = input( "Name: " )
+          while shortcut == "":
+            shortcut = input( "Shortcut: " )
+          save = input( "Do you want to save ([y]/n)? " )
+          save = (save == "y" or save == "")
+        except KeyboardInterrupt:
+          save = False
+          print( "" ) # To break down prompt to a new line
+      elif parsed_args.name is not None and parsed_args.name != "" and parsed_args.shortcut is not None and parsed_args.shortcut != "":
+        name     = parsed_args.name
+        shortcut = parsed_args.shortcut
+      else:
+        save = False
+      if save:
+        subject          = Subject( self._connection )
+        subject.Name     = name
+        subject.Shortcut = shortcut
+        if subject.Insert( ):
+          print( self._cf.bold_green( "Subject with name `{} ({})` has been successfully saved!".format( name, shortcut ) ) )
+          print( self._cf.white( "If you want to link this subject with the current term you have to execute `subject link`" ) )
+          self._UpdateCDCommand( )
+        else:
+          print( self._cf.bold_red( "An error occured during the insert action of subject with name `{}`".format( name ) ) )
+      elif parsed_args.name is None or parsed_args.name == "" or parsed_args.shortcut is None or parsed_args.shortcut == "":
+        print( self._cf.bold_red( "You have to pass a name with -n and a shortcut with -s to save a subject else you can choose -i for interactive mode" ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
 
   def cmd_subject_remove( self, item, args, rawline ):
-    pass
+    """-s <id>|-i||remove a subject by id or in interactive mode"""
+    parser = argparse.ArgumentParser( prog = "subject remove", description = self.cmd_subject_remove.__doc__.split( "||" )[1] )
+    parser.add_argument( "-s", "--id", help = "set the id of the subject to remove" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      id = None
+      parsed_args = parser.parse_args( args.split( " " ) )
+      subjects = Subject.GetSubjects( self._connection )
+      available_ids = [str( s.Id ) for s in subjects]
+      if parsed_args.interactive:
+        if len( subjects ) == 0:
+          print( self._cf.white( "There are no subjects to remove" ) )
+        else:
+          print( self._cf.bold_green( "Subjects you can remove:" ) )
+          self.PrintSubjectTable( subjects )
+          try:
+            id = input( "Enter id of the subject to be removed: " )
+          except KeyboardInterrupt:
+            print( "" ) # To break down prompt to a new line
+      elif parsed_args.id is not None and parsed_args.id != "":
+        id = parsed_args.id
+
+      if id is not None:
+        if id in available_ids:
+          subject = [s for s in subjects if str( s.Id ) == id][0]
+          if subject.Delete( ):
+            print( self._cf.bold_green( "Subject with id `{}` has been successfully removed".format( id ) ) )
+            self._UpdateCDCommand( )
+          else:
+            print( self._cf.bold_red( "An error occured during delete action of subject with id `{}`".format( id ) ) )
+        else:
+          print( self._cf.bold_red( "Subject with id `{}` does not exist".format( id ) ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
+
+  def cmd_subject_link( self, item, args, rawline ):
+    """-s <subject>|-i||link an existing subject with the current term. Pass -s for the subject id or -i for interactive mode"""
+    parser = argparse.ArgumentParser( prog = "subject add", description = self.cmd_subject_add.__doc__.split( "||" )[1] )
+    parser.add_argument( "-s", "--subject", help = "set the subject to link with the current erm" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      parsed_args   = parser.parse_args( args.split( " " ) )
+      subjects      = Subject.GetSubjects( self._connection )
+      available_ids = [str( s.Id ) for s in subjects]
+      subjectid     = None
+      save          = True
+      if parsed_args.interactive:
+        try:
+          if len( subjects ) == 0:
+            print( self._cf.white( "There are no subjects you can link with the current term" ) )
+          else:
+            print( self._cf.bold_green( "Subjects you can link: ") )
+            self.PrintSubjectTable( subjects )
+            subjectid = input( "Enter id of the subject to link: " )
+            save      = input( "Do you want to save ([y]/n)? " )
+            save      = (save == "y" or save == "")
+        except KeyboardInterrupt:
+          save = False
+          print( "" ) # To break down prompt to a new line
+      elif parsed_args.subject is not None and parsed_args.subject != "":
+        subjectid = parsed_args.subject
+      else:
+        save = False
+      if save:
+        if subjectid in available_ids:
+          termsubject         = Termsubject( self._connection )
+          termsubject.Subject = Subject.GetSubjectById( self._connection, subjectid )
+          termsubject.Term    = CLI.GetLocationValue( self )
+          if termsubject.Insert( ):
+            print( self._cf.bold_green( "Subject with name `{} ({})` has been successfully linked to term `{}`!".format( termsubject.Subject.Name, termsubject.Subject.Shortcut, termsubject.Term.Name ) ) )
+            self._UpdateCDCommand( )
+          else:
+            print( self._cf.bold_red( "An error occured during the linking of subject with id `{}` and the current term".format( subjectid ) ) )
+        else:
+          print( self._cf.bold_red( "Subject with id `{}` does not exist".format( subjectid ) ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
+
+  def cmd_subject_unlink( self, item, args, rawline ):
+    """-s <id>|-i||unlink a subject with the current term by id or in interactive mode"""
+    parser = argparse.ArgumentParser( prog = "subject unlink", description = self.cmd_subject_unlink.__doc__.split( "||" )[1] )
+    parser.add_argument( "-s", "--id", help = "set the id of the subject to unlink" )
+    parser.add_argument( "-i", "--interactive", action = "store_true", help = "use the interactive mode" )
+
+    try:
+      id = None
+      parsed_args = parser.parse_args( args.split( " " ) )
+      subjects = Subject.GetSubjectsByTerm( self._connection, CLI.GetLocationValue( self ) )
+      available_ids = [str( s.Id ) for s in subjects]
+      if parsed_args.interactive:
+        if len( subjects ) == 0:
+          print( self._cf.white( "There are no subjects to unlink" ) )
+        else:
+          print( self._cf.bold_green( "Subjects you can unlink:" ) )
+          self.PrintSubjectTable( subjects )
+          try:
+            id = input( "Enter id of the subject to be unlinked: " )
+          except KeyboardInterrupt:
+            print( "" ) # To break down prompt to a new line
+      elif parsed_args.id is not None and parsed_args.id != "":
+        id = parsed_args.id
+
+      if id is not None:
+        if id in available_ids:
+          subject = [s for s in subjects if str( s.Id ) == id][0]
+          term    = CLI.GetLocationValue( self )
+          termsubject = Termsubject.GetTermsubjectByTermAndSubject( self._connection, term, subject )
+          if termsubject.Delete( ):
+            print( self._cf.bold_green( "Subject with id `{}` has been successfully unlinked".format( id ) ) )
+            self._UpdateCDCommand( )
+          else:
+            print( self._cf.bold_red( "An error occured during unlinking of subject with id `{}`".format( id ) ) )
+        else:
+          print( self._cf.bold_red( "Subject with id `{}` does not exist".format( id ) ) )
+    except SystemExit:       # Do not exit cli if an error occured in parse_args
+      pass
 
   def cmd_mark( self, item, args, rawline ):
     pass

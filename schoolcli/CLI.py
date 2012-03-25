@@ -12,17 +12,18 @@ sys.path.insert( 0, path.join( path.dirname( path.abspath( __file__ ) ), "colorf
 from Colorful import * # For colored output in chell
 
 class CLI:
-  _started       = False
-  _history_file  = None
+  _started        = False
+  _history_file   = None
 
-  _welcome_text  = None
+  _welcome_text   = None
 
-  _location      = "/"        # Current location
+  _location       = "/"        # Current location
+  _location_value = "root"     # Location value
 
-  _items         = []         # List with all available CLI items
-  _matches       = []         # Current matches if you press tab while typing
+  _items          = []         # List with all available CLI items
+  _matches        = []         # Current matches if you press tab while typing
 
-  _cf            = None       # Instance of Colorful
+  _cf             = None       # Instance of Colorful
 
   def __init__( self, history_file = None, welcome_text = None ):
     self._cf = Colorful( )
@@ -111,11 +112,18 @@ class CLI:
     sys.stdout.write( readline.get_line_buffer( ) )
     sys.stdout.flush( )
 
-  def SetLocation( self, location ):
-    self._location = location
+  def SetLocation( self, location, value = None ):
+    self._location       = location
+    self._location_value = value
 
   def ParseLocation( self ):
     return self._location.split( "/" )
+
+  def SetLocationValue( self, value ):
+    self._location_value = value
+
+  def GetLocationValue( self ):
+    return self._location_value
 
   def RegisterItem( self, item ):
     if isinstance( item, CLIItem ):

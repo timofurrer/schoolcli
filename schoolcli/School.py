@@ -84,7 +84,22 @@ class School:
         school = None
         c = connection.cursor( )
         c.execute( "SELECT * FROM School WHERE id = ?", [id] )
-        row = c.fetchone( )[0]
+        row = c.fetchall( )[0]
+        school = School( connection, row["id"], row["name"] )
+        c.close( )
+        return school
+      except:
+        return None
+    return None
+
+  @staticmethod
+  def GetSchoolByName( connection, name ):
+    if connection is not None:
+      try:
+        school = None
+        c = connection.cursor( )
+        c.execute( "SELECT * FROM School WHERE name = ?", [name] )
+        row = c.fetchall( )[0]
         school = School( connection, row["id"], row["name"] )
         c.close( )
         return school
