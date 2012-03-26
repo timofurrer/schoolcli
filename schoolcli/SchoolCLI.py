@@ -116,47 +116,47 @@ class SchoolCLI( CLI ):
     c = self._connection.cursor( )
 
     create_school_table = """
-    CREATE TABLE IF NOT EXISTS School (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR NOT NULL
-    );
+      CREATE TABLE IF NOT EXISTS School (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR NOT NULL
+      );
     """
     create_term_table = """
-    CREATE TABLE IF NOT EXISTS Term (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    school INTEGER NOT NULL,
-    name VARCHAR NOT NULL,
-    FOREIGN KEY( school ) REFERENCES School( id )
-    );
+      CREATE TABLE IF NOT EXISTS Term (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school INTEGER NOT NULL,
+        name VARCHAR NOT NULL,
+        FOREIGN KEY( school ) REFERENCES School( id )
+      );
     """
     create_termsubject_table = """
-    CREATE TABLE IF NOT EXISTS Termsubject (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    term INTEGER NOT NULL,
-    subject INTEGER NOT NULL,
-    FOREIGN KEY( term ) REFERENCES Term( id ),
-    FOREIGN KEY( subject ) REFERENCES Subject( id )
-    );
+      CREATE TABLE IF NOT EXISTS Termsubject (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        term INTEGER NOT NULL,
+        subject INTEGER NOT NULL,
+        FOREIGN KEY( term ) REFERENCES Term( id ),
+        FOREIGN KEY( subject ) REFERENCES Subject( id )
+      );
     """
     create_subject_table = """
-    CREATE TABLE IF NOT EXISTS Subject (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR NOT NULL,
-    shortcut VARCHAR
-    );
+      CREATE TABLE IF NOT EXISTS Subject (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR NOT NULL,
+        shortcut VARCHAR
+      );
     """
     create_mark_table = """
-    CREATE TABLE IF NOT EXISTS Mark (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    termsubject INTEGER NOT NULL,
-    mark DOUBLE NOT NULL,
-    points DOUBLE,
-    max_points DOUBLE,
-    valuation DOUBLE,
-    avarage_mark DOUBLE,
-    date DATE,
-    FOREIGN KEY( termsubject ) REFERENCES Termsubject( id )
-    );
+      CREATE TABLE IF NOT EXISTS Mark (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        termsubject INTEGER NOT NULL,
+        mark DOUBLE NOT NULL,
+        points DOUBLE,
+        max_points DOUBLE,
+        valuation DOUBLE,
+        avarage_mark DOUBLE,
+        date DATE,
+        FOREIGN KEY( termsubject ) REFERENCES Termsubject( id )
+      );
     """
     c.execute( create_school_table )
     c.execute( create_term_table )
