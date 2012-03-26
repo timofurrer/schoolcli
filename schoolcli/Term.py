@@ -112,9 +112,25 @@ class Term:
   def GetTermByName( connection, name ):
     if connection is not None:
       try:
-        school = None
+        term = None
         c = connection.cursor( )
         c.execute( "SELECT * FROM Term WHERE name = ?", [name] )
+        row = c.fetchall( )[0]
+        school = School.GetSchoolById( connection, row["school"] )
+        term = Term( connection, row["id"], school, row["name"] )
+        c.close( )
+        return term
+      except:
+        return None
+    return None
+
+  @staticmethod
+  def GetTermById( connection, id ):
+    if connection is not None:
+      try:
+        term = None
+        c = connection.cursor( )
+        c.execute( "SELECT * FROM Term WHERE id = ?", [id] )
         row = c.fetchall( )[0]
         school = School.GetSchoolById( connection, row["school"] )
         term = Term( connection, row["id"], school, row["name"] )

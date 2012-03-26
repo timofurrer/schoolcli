@@ -1,5 +1,7 @@
 #!/usr/bin/python3.2
 
+from Termsubject import *
+
 class Mark:
   _connection  = None
   _id          = None
@@ -105,18 +107,18 @@ class Mark:
 
   def Delete( self ):
     if self._connection is not None:
-      try:
-        c = self._connection.cursor( )
-        delete = """
-          DELETE FROM Mark
-            WHERE id = ?
-        """
-        c.execute( delete, str( self._id ))
-        self._connection.commit( )
-        c.close( )
-        return True
-      except:
-        return False
+      #try:
+      c = self._connection.cursor( )
+      delete = """
+        DELETE FROM Mark
+          WHERE id = ?
+      """
+      c.execute( delete, [str( self._id )])
+      self._connection.commit( )
+      c.close( )
+      return True
+      #except:
+        #return False
     else:
       return False
 
@@ -145,23 +147,23 @@ class Mark:
   @staticmethod
   def GetMarksByTerm( connection, term ):
     if connection is not None:
-      try:
-        marks = []
-        c = connection.cursor( )
-        select = """
-          SELECT Mark.id AS id, Mark.mark AS mark, Mark.points AS points, Mark.max_points AS max_points, Mark.valuation AS valuation, Mark.avarage_mark AS avarage_mark, Mark.date AS date
-            FROM Mark
-            INNER JOIN Termsubject
-              ON Termsubject.id = Mark.termsubject
-            WHERE Termsubject.term = ?
-        """
-        c.execute( select, [termsubject.Id] )
-        rows = c.fetchall( )
+      #try:
+      marks = []
+      c = connection.cursor( )
+      select = """
+        SELECT Mark.id AS id, Mark.mark AS mark, Mark.points AS points, Mark.max_points AS max_points, Mark.valuation AS valuation, Mark.avarage_mark AS avarage_mark, Mark.date AS date, Termsubject.id AS termsubject
+          FROM Mark
+          INNER JOIN Termsubject
+            ON Termsubject.id = Mark.termsubject
+          WHERE Termsubject.term = ?
+      """
+      c.execute( select, [term.Id] )
+      rows = c.fetchall( )
 
-        for row in rows:
-          marks.append( Mark( connection, row["id"], termsubject, row["mark"], row["points"], row["max_points"], row["valuation"], row["avarage_mark"], row["date"] ))
-        c.close( )
-        return marks
-      except:
-        return []
+      for row in rows:
+        marks.append( Mark( connection, row["id"], Termsubject.GetTermsubjectById( connection, row["termsubject"] ), row["mark"], row["points"], row["max_points"], row["valuation"], row["avarage_mark"], row["date"] ))
+      c.close( )
+      return marks
+      #except:
+        #return []
     return []

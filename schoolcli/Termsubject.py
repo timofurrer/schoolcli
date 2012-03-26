@@ -83,3 +83,17 @@ class Termsubject:
       except:
         return []
     return []
+
+  @staticmethod
+  def GetTermsubjectById( connection, id ):
+    if connection is not None:
+      try:
+        c = connection.cursor( )
+        c.execute( "SELECT * FROM Termsubject WHERE id = ?", [id] )
+        row = c.fetchall( )[0]
+        termsubject = Termsubject( connection, row["id"], Term.GetTermById( connection, row["term"] ), Subject.GetSubjectById( connection, row["subject"] ))
+        c.close( )
+        return termsubject
+      except:
+        return []
+    return []

@@ -46,6 +46,7 @@ class SchoolCLI( CLI ):
     CLI.RegisterItem( self, CLIItem( "cd", self.cmd_cd, category = "default", subitems = [] ))
     CLI.RegisterItem( self, CLIItem( "ls", self.cmd_ls, category = "default", subitems = [] ))
     CLI.RegisterItem( self, CLIItem( "pwd", self.cmd_pwd, category = "default", subitems = [] ))
+    CLI.RegisterItem( self, CLIItem( "avg", self.cmd_avg, category = "default", subitems = [] ))
     self._UpdateCDCommand( )
 
   def AddSchoolCommands( self ):
@@ -355,6 +356,47 @@ class SchoolCLI( CLI ):
   def cmd_pwd( self, item, args, rawline ):
     """print the working directory ( location )"""
     print( self._ls.GetLocationAsText( ))
+
+  def cmd_avg( self, item, args, rawline ):
+    """calculate the avarage of the current location"""
+    index = self._ls.GetHierarchyIndex( )
+    indent = " " * 4
+    space  = " " * 6
+    wall   = "|"
+
+    rows  = []
+
+    if index == 0:
+      rows.append( { "key" : "Schools", "value" : "Avarage" } )
+      for school in School.GetSchools( self._connection ):
+        avarage     = 0.0
+        valuation   = 0.0
+        for term in Term.GetTermsBySchool( self._connection, school ):
+          for mark in Mark.GetMarksByTerm( self._connection, term ):
+            mark_tmp      = float( mark.Mark )
+            if mark.Valuation is not None and mark.Valuation != "":
+              valuation_tmp = mark.Valuation
+            else:
+              valuation_tmp = 100.0
+
+            avarage   += mark_tmp * valuation_tmp
+            valuation += valuation_tmp
+        elem = {}
+        elem["key"] = school.Name
+        if valuation == 0:
+          elem["value"] = 0
+        else:
+          elem["value"] = avarage / valuation
+        rows.append( elem )
+
+    max_len_first_col  = len( max( [d["key"] for d in rows],          key = len ))
+    max_len_second_col = len( max( [str( d["value"] ) for d in rows], key = len ))
+
+    print( indent + Colorful.bold_green( rows[0]["key"] ) + " " * (max_len_first_col - len( rows[0]["key"] )) + space + wall + " " + Colorful.bold_green( rows[0]["value"] ))
+    print( " " * 2 + "-" * (max_len_first_col + max_len_second_col + len( space ) + len( wall ) + 1 + 4 ))
+
+    for row in rows[1:]:
+      print( indent + row["key"] + " " * (max_len_first_col - len( row["key"] )) + space + wall + " " + str( row["value"] ) + " " * (max_len_second_col - len( str( row["value"] ))))
 
   def cmd_school( self, item, args, rawline ):
     """<add|remove>||add or remove a school"""
@@ -751,7 +793,6 @@ class SchoolCLI( CLI ):
       id = None
       parsed_args = parser.parse_args( args.split( " " ))
       marks = Mark.GetMarksByTermsubject( self._connection, self._ls.GetCurrentLocationValue( ))
-      print( marks )
       available_ids = [str( m.Id ) for m in marks]
       if parsed_args.interactive:
         if len( marks ) == 0:
