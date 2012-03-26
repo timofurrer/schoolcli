@@ -46,7 +46,7 @@ class Term:
           INSERT INTO Term
             VALUES( ?, ?, ? )
         """
-        c.execute( insert, (c.lastrowid, self._school.Id, self._name) )
+        c.execute( insert, (c.lastrowid, self._school.Id, self._name))
         self._connection.commit( )
         c.close( )
         return True
@@ -63,7 +63,7 @@ class Term:
           DELETE FROM Term
             WHERE id = ?
         """
-        c.execute( delete, str( self._id ) )
+        c.execute( delete, str( self._id ))
         self._connection.commit( )
         c.close( )
         return True
@@ -84,7 +84,7 @@ class Term:
         for row in rows:
           school = School.GetSchoolById( connection, row["id"] )
           if school is not None:
-            terms.append( Term( connection, row["id"], school, row["name"] ) )
+            terms.append( Term( connection, row["id"], school, row["name"] ))
         c.close( )
         return terms
       except:
@@ -101,7 +101,7 @@ class Term:
         rows = c.fetchall( )
 
         for row in rows:
-          terms.append( Term( connection, row["id"], school, row["name"] ) )
+          terms.append( Term( connection, row["id"], school, row["name"] ))
         c.close( )
         return terms
       except:

@@ -34,7 +34,7 @@ class School:
           INSERT INTO School
             VALUES( ?, ? )
         """
-        c.execute( insert, (c.lastrowid, self._name) )
+        c.execute( insert, (c.lastrowid, self._name))
         self._connection.commit( )
         c.close( )
         return True
@@ -70,7 +70,7 @@ class School:
         rows = c.fetchall( )
 
         for row in rows:
-          schools.append( School( connection, row["id"], row["name"] ) )
+          schools.append( School( connection, row["id"], row["name"] ))
         c.close( )
         return schools
       except:

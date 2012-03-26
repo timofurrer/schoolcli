@@ -111,7 +111,7 @@ class Mark:
           DELETE FROM Mark
             WHERE id = ?
         """
-        c.execute( delete, str( self._id ) )
+        c.execute( delete, str( self._id ))
         self._connection.commit( )
         c.close( )
         return True
@@ -135,7 +135,7 @@ class Mark:
         rows = c.fetchall( )
 
         for row in rows:
-          marks.append( Mark( connection, row["id"], termsubject, row["mark"], row["points"], row["max_points"], row["valuation"], row["avarage_mark"], row["date"] ) )
+          marks.append( Mark( connection, row["id"], termsubject, row["mark"], row["points"], row["max_points"], row["valuation"], row["avarage_mark"], row["date"] ))
         c.close( )
         return marks
       except:
@@ -159,7 +159,7 @@ class Mark:
         rows = c.fetchall( )
 
         for row in rows:
-          marks.append( Mark( connection, row["id"], termsubject, row["mark"], row["points"], row["max_points"], row["valuation"], row["avarage_mark"], row["date"] ) )
+          marks.append( Mark( connection, row["id"], termsubject, row["mark"], row["points"], row["max_points"], row["valuation"], row["avarage_mark"], row["date"] ))
         c.close( )
         return marks
       except:

@@ -44,7 +44,7 @@ class Termsubject:
           INSERT INTO Termsubject
             VALUES( ?, ?, ? )
         """
-        c.execute( insert, (c.lastrowid, self._term.Id, self._subject.Id) )
+        c.execute( insert, (c.lastrowid, self._term.Id, self._subject.Id))
         self._connection.commit( )
         c.close( )
         return True
@@ -61,7 +61,7 @@ class Termsubject:
           DELETE FROM Termsubject
             WHERE id = ?
         """
-        c.execute( delete, str( self._id ) )
+        c.execute( delete, str( self._id ))
         self._connection.commit( )
         c.close( )
         return True

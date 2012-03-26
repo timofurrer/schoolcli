@@ -44,7 +44,7 @@ class Subject:
           INSERT INTO Subject
             VALUES( ?, ?, ? )
         """
-        c.execute( insert, (c.lastrowid, self._name, self._shortcut) )
+        c.execute( insert, (c.lastrowid, self._name, self._shortcut))
         self._connection.commit( )
         c.close( )
         return True
@@ -61,7 +61,7 @@ class Subject:
           DELETE FROM Subject
             WHERE id = ?
         """
-        c.execute( delete, str( self._id ) )
+        c.execute( delete, str( self._id ))
         self._connection.commit( )
         c.close( )
         return True
@@ -80,7 +80,7 @@ class Subject:
         rows = c.fetchall( )
 
         for row in rows:
-          subjects.append( Subject( connection, row["id"], row["name"], row["shortcut"] ) )
+          subjects.append( Subject( connection, row["id"], row["name"], row["shortcut"] ))
         c.close( )
         return subjects
       except:
@@ -104,7 +104,7 @@ class Subject:
         rows = c.fetchall( )
 
         for row in rows:
-          subjects.append( Subject( connection, row["id"], row["name"], row["shortcut"] ) )
+          subjects.append( Subject( connection, row["id"], row["name"], row["shortcut"] ))
         c.close( )
         return subjects
       except:

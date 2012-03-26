@@ -6,22 +6,22 @@ import readline
 import copy
 
 from CLIItem import *
+from LocationService import *
 
-sys.path.insert( 0, path.join( path.dirname( path.abspath( __file__ ) ), "colorful/colorful" ) ) # Need to add Colorful
+sys.path.insert( 0, path.join( path.dirname( path.abspath( __file__ )), "colorful/colorful" )) # Need to add Colorful
 
 from Colorful import * # For colored output in chell
 
 class CLI:
-  _started        = False
-  _history_file   = None
+  _started      = False
+  _history_file = None
 
-  _welcome_text   = None
+  _welcome_text = None
 
-  _location       = "/"        # Current location
-  _location_value = "root"     # Location value
+  _ls           = None # Location Service
 
-  _items          = []         # List with all available CLI items
-  _matches        = []         # Current matches if you press tab while typing
+  _items        = []         # List with all available CLI items
+  _matches      = []         # Current matches if you press tab while typing
 
   def __init__( self, history_file = None, welcome_text = None ):
     readline.set_completer( self._Complete )
@@ -31,6 +31,7 @@ class CLI:
       self._history_file = path.expanduser( history_file )
     self._welcome_text = welcome_text
     self.AddAboutItem( )
+    self._ls = LocationService( )
 
   def Start( self ):
     if self._history_file is not None:
@@ -41,7 +42,7 @@ class CLI:
 
     self._started = True
     if self._welcome_text is not None:
-      print( Colorful.bold_white( self._welcome_text ) )
+      print( Colorful.bold_white( self._welcome_text ))
 
     if hasattr( self, "do_BeforStart" ):
       self.do_BeforStart( )
@@ -49,7 +50,7 @@ class CLI:
     line_input = ""
     while self._started:
       try:
-        line_input = input( self.GetPrompt( ) )
+        line_input = input( self.GetPrompt( ))
       except EOFError:          # Occures when Ctrl+D is pressed in shell
         print( )                # To break down the following question
         y = input( "Do you really want to exit ([y]/n)? " )
@@ -66,9 +67,9 @@ class CLI:
           if f is not None:
             f( item, args, line_input )
           else:
-            print( Colorful.bold_red( "Item is not callable" ) )
+            print( Colorful.bold_red( "Item is not callable" ))
         else:
-          print( Colorful.bold_red( "Command can not be found" ) )
+          print( Colorful.bold_red( "Command can not be found" ))
 
   def Stop( self ):
     if self._history_file is not None:
@@ -97,30 +98,17 @@ class CLI:
 
   def GetPrompt( self, colored = True ):
     if colored:
-      return self._prompt.format( Colorful.cyan( self._location ) )
+      return self._prompt.format( Colorful.cyan( self._ls.GetLocationAsText( )))
     else:
-      return self._prompt.format( self._location )
+      return self._prompt.format( self._ls.GetLocationAsText( ))
 
   def PutPrompt( self, colored = True ):
     if colored:
-      sys.stdout.write( "\r{}".format( self.GetPrompt( ) ) )
+      sys.stdout.write( "\r{}".format( self.GetPrompt( )))
     else:
-      sys.stdout.write( "\r{}".format( self.GetPrompt( False ) ) )
-    sys.stdout.write( readline.get_line_buffer( ) )
+      sys.stdout.write( "\r{}".format( self.GetPrompt( False )))
+    sys.stdout.write( readline.get_line_buffer( ))
     sys.stdout.flush( )
-
-  def SetLocation( self, location, value = None ):
-    self._location       = location
-    self._location_value = value
-
-  def ParseLocation( self ):
-    return self._location.split( "/" )
-
-  def SetLocationValue( self, value ):
-    self._location_value = value
-
-  def GetLocationValue( self ):
-    return self._location_value
 
   def RegisterItem( self, item ):
     if isinstance( item, CLIItem ):
@@ -172,11 +160,11 @@ class CLI:
     self._UpdateHelpItem( )
 
   def AddAboutItem( self ):
-    self.RegisterItem( CLIItem( "about", self.AboutScreen, category = "default", subitems = [] ) )
+    self.RegisterItem( CLIItem( "about", self.AboutScreen, category = "default", subitems = [] ))
 
   def AboutScreen( self, item, args = "", line = "" ):
     """show the about screen with copyright and author information"""
-    print( Colorful.bold_cyan( "(C) Copyright 2012 by Timo Furrer <timo.furrer@gmail.com>") )
+    print( Colorful.bold_cyan( "(C) Copyright 2012 by Timo Furrer <timo.furrer@gmail.com>"))
 
   def AddHelpItem( self ):
     item = CLIItem( "help", self.HelpScreen, category = "default", subitems = [] )
@@ -196,27 +184,27 @@ class CLI:
     items            = [i for i in self._items if i.IsEnabled( )]
     indent           = " " * 4
     space            = " " * 6
-    max_len_name     = len( max( [i.GetName( )     for i in items], key = len ) )
-    max_len_usage    = len( max( [i.GetUsage( )    for i in items], key = len ) )
-    max_len_helptext = len( max( [i.GetHelpText( ) for i in items], key = len ) )
+    max_len_name     = len( max( [i.GetName( )     for i in items], key = len ))
+    max_len_usage    = len( max( [i.GetUsage( )    for i in items], key = len ))
+    max_len_helptext = len( max( [i.GetHelpText( ) for i in items], key = len ))
 
     if args == "":
-      for i in sorted( items, key = lambda i: i.GetName( ) ):
+      for i in sorted( items, key = lambda i: i.GetName( )):
         f = i.GetFunction( )
         if f is not None:
-          sys.stdout.write( indent + Colorful.bold_green( i.GetName( ) ) + " " * ( max_len_name - len( i.GetName( ) ) ) )
-          sys.stdout.write( space + i.GetUsage( ) + " " * ( max_len_usage - len( i.GetUsage( ) ) ) )
+          sys.stdout.write( indent + Colorful.bold_green( i.GetName( )) + " " * ( max_len_name - len( i.GetName( ))))
+          sys.stdout.write( space + i.GetUsage( ) + " " * ( max_len_usage - len( i.GetUsage( ))))
           sys.stdout.write( space + i.GetHelpText( ) + "\n" )
     else:
-      item = self.GetItemByName( args.strip( ) )
+      item = self.GetItemByName( args.strip( ))
       if item is not None:
         if item.IsEnabled( ):
           f = item.GetFunction( )
           if f is not None:
-            print( indent + Colorful.bold_green( item.GetName( ) ) + space + item.GetUsage( ) + space + item.GetHelpText( ) )
+            print( indent + Colorful.bold_green( item.GetName( )) + space + item.GetUsage( ) + space + item.GetHelpText( ))
           else:
-            print( Colorful.bold_red( "Command has no function defined, so no help could be showed" ) )
+            print( Colorful.bold_red( "Command has no function defined, so no help could be showed" ))
         else:
-          print( Colorful.bold_red( "Command can not be found" ) )
+          print( Colorful.bold_red( "Command can not be found" ))
       else:
-        print( Colorful.bold_red( "Command can not be found" ) )
+        print( Colorful.bold_red( "Command can not be found" ))
