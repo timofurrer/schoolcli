@@ -3,6 +3,7 @@
 import os
 import sqlite3
 import argparse
+import time
 
 from CLI         import *
 from School      import *
@@ -249,20 +250,13 @@ class SchoolCLI( CLI ):
       max_len_avarage     = len( max( [str( m.Avarage ) for m in marks],   key = len ) )
       max_len_date        = len( max( [str( m.Date ) for m in marks],      key = len ) )
 
-      if len( "Id" ) > max_len_id:
-        max_len_id = len( "Id")
-      if len( "Mark" ) > max_len_mark:
-        max_len_mark = len( "Mark")
-      if len( "Points" ) > max_len_points:
-        max_len_points = len( "Points")
-      if len( "Max Points" ) > max_len_max_points:
-        max_len_max_points = len( "Max Points")
-      if len( "Valuation" ) > max_len_valuation:
-        max_len_valuation = len( "Valuation")
-      if len( "Avarage" ) > max_len_avarage:
-        max_len_avarage = len( "Avarage")
-      if len( "Date" ) > max_len_date:
-        max_len_date = len( "Date")
+      if len( "Id" ) > max_len_id: max_len_id = len( "Id")
+      if len( "Mark" ) > max_len_mark: max_len_mark = len( "Mark")
+      if len( "Points" ) > max_len_points: max_len_points = len( "Points")
+      if len( "Max Points" ) > max_len_max_points: max_len_max_points = len( "Max Points")
+      if len( "Valuation" ) > max_len_valuation: max_len_valuation = len( "Valuation")
+      if len( "Avarage" ) > max_len_avarage: max_len_avarage = len( "Avarage")
+      if len( "Date" ) > max_len_date: max_len_date = len( "Date")
 
       sys.stdout.write( Colorful.bold_green( indent + "Id" + " " * (max_len_id - 2) + space + wall + " " + "Mark" + " " * (max_len_mark - 4) + space + wall + " " ) )
       sys.stdout.write( Colorful.bold_green( "Points" + " " * (max_len_points - 6) + space + wall + " " + "Max Points" + " " * (max_len_max_points - 10) + space + wall + " " ) )
@@ -270,13 +264,35 @@ class SchoolCLI( CLI ):
       print( " " * 2 + "-" * (6 * len( space ) + max_len_id + max_len_mark + max_len_points + max_len_max_points + max_len_valuation + max_len_avarage + max_len_date + 6 * len( wall ) + 12 * len( " " ) ) )
 
       for mark in marks:
-        sys.stdout.write( indent + str( mark.Id ) + " " * (max_len_id - len( str( mark.Id ) ) ) + space + wall + " " )
-        sys.stdout.write( str( mark.Mark ) + " " * (max_len_mark - len( str( mark.Mark ) ) ) + space + wall + " " )
-        sys.stdout.write( str( mark.Points ) + " " * (max_len_points - len( str( mark.Points ) ) ) + space + wall + " " )
-        sys.stdout.write( str( mark.MaxPoints ) + " " * (max_len_max_points - len( str( mark.MaxPoints ) ) ) + space + wall + " " )
-        sys.stdout.write( str( mark.Valuation ) + " " * (max_len_valuation - len( str( mark.Valuation ) ) ) + space + wall + " " )
-        sys.stdout.write( str( mark.Avarage ) + " " * (max_len_avarage - len( str( mark.Avarage ) ) ) + space + wall + " " )
-        print( str( mark.Date ) + " " * (max_len_date - len( str( mark.Date ) ) ) )
+        if mark.Mark >= 5.5:
+          mark_output = Colorful.bold_green( str( mark.Mark )) #FIXME: Can Colorful "underline_and_bold_green ?!
+        elif mark.Mark >= 5:
+          mark_output = Colorful.bold_green( str( mark.Mark ))
+        elif mark.Mark >= 4:
+          mark_output = Colorful.green( str( mark.Mark ))
+        elif mark.Mark >= 3:
+          mark_output = Colorful.red( str( mark.Mark ))
+        else:
+          mark_output = Colorful.bold_red( str( mark.Mark ))
+
+        points_output     = str( mark.Points ) if mark.Points                           != "" else Colorful.white( "---" )
+        points_len        = len( str( mark.Points )) if mark.Points                     != "" else 3
+        max_points_output = str( mark.MaxPoints ) if mark.MaxPoints                     != "" else Colorful.white( "---" )
+        max_points_len    = len( str( mark.MaxPoints )) if mark.MaxPoints               != "" else 3
+        valuation_output  = str( mark.Valuation ) if mark.Valuation                     != "" else Colorful.white( "---" )
+        valuation_len     = len( str( mark.Valuation )) if mark.Valuation               != "" else 3
+        avarage_output    = str( mark.Avarage ) if mark.Avarage                         != "" else Colorful.white( "---" )
+        avarage_len       = len( str( mark.Avarage )) if mark.Avarage                   != "" else 3
+        date_output       = str( mark.Date ) if mark.Date                               != "" else Colorful.white( "---" )
+        date_len          = len( str( mark.Date )) if mark.Date                         != "" else 3
+
+        sys.stdout.write( indent + str( mark.Id ) + " " * (max_len_id - len( str( mark.Id ))) + space + wall + " " )
+        sys.stdout.write( mark_output + " " * (max_len_mark - len( str( mark.Mark))) + space + wall + " " )
+        sys.stdout.write( points_output + " " * (max_len_points - points_len) + space + wall + " " )
+        sys.stdout.write( max_points_output + " " * (max_len_max_points - max_points_len) + space + wall + " " )
+        sys.stdout.write( valuation_output + " " * (max_len_valuation - valuation_len) + space + wall + " " )
+        sys.stdout.write( avarage_output + " " * (max_len_avarage - avarage_len) + space + wall + " " )
+        print( date_output + " " * (max_len_date - date_len))
     else:
       print( Colorful.bold_green( "There are no marks" ) )
 
@@ -696,7 +712,18 @@ class SchoolCLI( CLI ):
           continue
 
       avarage      = input( "Avarage []: " )
-      date         = input( "Date []: " )
+      while date is None:
+        date       = input( "Date []: " )
+        if date == "":
+          date = None
+          break
+        try:
+          test = time.strptime( date, "%d.%m.%Y" )
+          break
+        except ValueError:
+          date = None
+          continue
+
       save         = input( "Do you want to save ([y]/n)? " )
       save         = (save == "y" or save == "")
     except KeyboardInterrupt:
@@ -708,9 +735,9 @@ class SchoolCLI( CLI ):
       mark.Mark        = mark_input
       mark.Points      = points
       mark.MaxPoints   = max_points
-      mark.valuation   = valuation
-      mark.avarage     = avarage
-      mark.date        = date
+      mark.Valuation   = valuation
+      mark.Avarage     = avarage
+      mark.Date        = date
       if mark.Insert( ):
         print( Colorful.bold_green( "This mark has been successfully saved!" ) )
         self._UpdateCDCommand( )

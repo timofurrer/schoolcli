@@ -94,7 +94,7 @@ class Mark:
         INSERT INTO Mark
           VALUES( ?, ?, ?, ?, ?, ?, ?, ? )
       """
-      c.execute( insert, (c.lastrowid, self._termsubject.Id, self._mark, self._points, self._max_points, self._valuation, self._avarage, self._date ) )
+      c.execute( insert, (c.lastrowid, self._termsubject.Id, self._mark, self._points, self._max_points, self._valuation, self._avarage, self._date ))
       self._connection.commit( )
       c.close( )
       return True
