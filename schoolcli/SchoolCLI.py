@@ -461,7 +461,7 @@ class SchoolCLI( CLI ):
         if mark.Valuation is not None and mark.Valuation != "":
           valuation_text = str( mark.Valuation )
         else:
-          valuatoin_text = "100"
+          valuation_text = "100"
 
         if mark.Date is not None:
           date = mark.Date
