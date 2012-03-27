@@ -324,7 +324,7 @@ class SchoolCLI( CLI ):
               print( Colorful.bold_red( "Could not change location because the term with the name `{}` could not be found".format( args )))
           elif index == 2:
             termsubject = Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._ls.GetCurrentLocationValue( ), Subject.GetSubjectByShortcut( self._connection, station ))
-            if termsubject is not None:
+            if termsubject is not None: #FIXME: Does not work yet!
               self._ls.AppendLocation( station, termsubject )
             else:
               print( Colorful.bold_red( "Could not change location because the subject with the shortcut `{}` could not be found".format( args )))
@@ -365,7 +365,9 @@ class SchoolCLI( CLI ):
     wall   = "|"
 
     rows  = []
+    last_special = False
 
+    # FIXME: Fill just one an then select the current item
     if index == 0:
       rows.append( { "key" : "Schools", "value" : "Avarage" } )
       for school in School.GetSchools( self._connection ):
@@ -388,15 +390,111 @@ class SchoolCLI( CLI ):
         else:
           elem["value"] = avarage / valuation
         rows.append( elem )
+    elif index == 1:
+      rows.append( { "key" : "Terms", "value" : "Avarage" } )
+      for term in Term.GetTermsBySchool( self._connection, self._ls.GetCurrentLocationValue( )):
+        avarage   = 0.0
+        valuation = 0.0
+        for mark in Mark.GetMarksByTerm( self._connection, term ):
+          mark_tmp      = float( mark.Mark )
+          if mark.Valuation is not None and mark.Valuation != "":
+            valuation_tmp = mark.Valuation
+          else:
+            valuation_tmp = 100.0
 
-    max_len_first_col  = len( max( [d["key"] for d in rows],          key = len ))
-    max_len_second_col = len( max( [str( d["value"] ) for d in rows], key = len ))
+          avarage   += mark_tmp * valuation_tmp
+          valuation += valuation_tmp
+        elem = {}
+        elem["key"] = term.Name
+        if valuation == 0:
+          elem["value"] = 0
+        else:
+          elem["value"] = avarage / valuation
+        rows.append( elem )
+    elif index == 2:
+      rows.append( { "key" : "Subjects", "value" : "Avarage" } )
+      for subject in Subject.GetSubjectsByTerm( self._connection, self._ls.GetCurrentLocationValue( )):
+        avarage   = 0.0
+        valuation = 0.0
+        for mark in Mark.GetMarksByTermsubject( self._connection, Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._ls.GetCurrentLocationValue( ), subject )):
+          mark_tmp      = float( mark.Mark )
+          if mark.Valuation is not None and mark.Valuation != "":
+            valuation_tmp = mark.Valuation
+          else:
+            valuation_tmp = 100.0
 
-    print( indent + Colorful.bold_green( rows[0]["key"] ) + " " * (max_len_first_col - len( rows[0]["key"] )) + space + wall + " " + Colorful.bold_green( rows[0]["value"] ))
-    print( " " * 2 + "-" * (max_len_first_col + max_len_second_col + len( space ) + len( wall ) + 1 + 4 ))
+          avarage   += mark_tmp * valuation_tmp
+          valuation += valuation_tmp
+        elem = {}
+        elem["key"] = subject.Name
+        if valuation == 0:
+          elem["value"] = 0
+        else:
+          elem["value"] = avarage / valuation
+        rows.append( elem )
+    elif index == 3:
+      last_special = True
+      rows.append( { "key" : "Points/MaxPoints - Valuation at Date", "value" : "Mark" } )
+      avarage   = 0.0
+      valuation = 0.0
+      for mark in Mark.GetMarksByTermsubject( self._connection, self._ls.GetCurrentLocationValue( )):
+        mark_tmp      = float( mark.Mark )
+        if mark.Valuation is not None and mark.Valuation != "":
+          valuation_tmp = mark.Valuation
+        else:
+          valuation_tmp = 100.0
 
-    for row in rows[1:]:
-      print( indent + row["key"] + " " * (max_len_first_col - len( row["key"] )) + space + wall + " " + str( row["value"] ) + " " * (max_len_second_col - len( str( row["value"] ))))
+        avarage   += mark_tmp * valuation_tmp
+        valuation += valuation_tmp
+
+        elem = {}
+        if mark.Points is not None:
+          points = str( mark.Points )
+        else:
+          points = "0"
+
+        if mark.MaxPoints is not None:
+          max_points = str( mark.MaxPoints )
+        else:
+          max_points = "0"
+
+        if mark.Valuation is not None and mark.Valuation != "":
+          valuation_text = str( mark.Valuation )
+        else:
+          valuatoin_text = "100"
+
+        if mark.Date is not None:
+          date = mark.Date
+        else:
+          date = "---"
+
+        elem["key"] = points + "/" + max_points + " - " + valuation_text + " at " + date
+        if valuation == 0:
+          elem["value"] = 0
+        else:
+          elem["value"] = mark.Mark
+        rows.append( elem )
+      elem = {}
+      elem["key"] = "Avarage:"
+      elem["value"] = avarage / valuation
+      rows.append( elem )
+
+    if len( rows ) > 0:
+      max_len_first_col  = len( max( [d["key"] for d in rows],          key = len ))
+      max_len_second_col = len( max( [str( d["value"] ) for d in rows], key = len ))
+
+      print( indent + Colorful.bold_green( rows[0]["key"] ) + " " * (max_len_first_col - len( rows[0]["key"] )) + space + wall + " " + Colorful.bold_green( rows[0]["value"] ))
+      print( " " * 2 + "-" * (max_len_first_col + max_len_second_col + len( space ) + len( wall ) + 1 + 4 ))
+
+      for_rows = rows[1:-1] if last_special else rows[1:]
+
+      for row in for_rows:
+        print( indent + row["key"] + " " * (max_len_first_col - len( row["key"] )) + space + wall + " " + str( round( row["value"], 2 )) + " " * (max_len_second_col - len( str( round( row["value"], 2 )))))
+
+      if last_special:
+        row = rows[-1]
+        print( " " * 2 + "-" * (max_len_first_col + max_len_second_col + len( space ) + len( wall ) + 1 + 4 ))
+        print( indent + row["key"] + " " * (max_len_first_col - len( row["key"] )) + space + wall + " " + str( row["value"] ) + " " * (max_len_second_col - len( str( row["value"] ))))
 
   def cmd_school( self, item, args, rawline ):
     """<add|remove>||add or remove a school"""
