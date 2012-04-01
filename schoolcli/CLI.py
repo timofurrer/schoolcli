@@ -42,7 +42,7 @@ class CLI:
 
     self._started = True
     if self._welcome_text is not None:
-      print( Colorful.bold_white( self._welcome_text ))
+      print( cf.bold_white( self._welcome_text ))
 
     if hasattr( self, "do_BeforStart" ):
       self.do_BeforStart( )
@@ -67,9 +67,9 @@ class CLI:
           if f is not None:
             f( item, args, line_input )
           else:
-            print( Colorful.bold_red( "Item is not callable" ))
+            print( cf.bold_red( "Item is not callable" ))
         else:
-          print( Colorful.bold_red( "Command can not be found" ))
+          print( cf.bold_red( "Command can not be found" ))
 
   def Stop( self ):
     if self._history_file is not None:
@@ -98,7 +98,7 @@ class CLI:
 
   def GetPrompt( self, colored = True ):
     if colored:
-      return self._prompt.format( Colorful.cyan( self._ls.GetLocationAsText( )))
+      return self._prompt.format( cf.cyan( self._ls.GetLocationAsText( )))
     else:
       return self._prompt.format( self._ls.GetLocationAsText( ))
 
@@ -164,7 +164,7 @@ class CLI:
 
   def AboutScreen( self, item, args = "", line = "" ):
     """show the about screen with copyright and author information"""
-    print( Colorful.bold_cyan( "(C) Copyright 2012 by Timo Furrer <timo.furrer@gmail.com>"))
+    print( cf.bold_cyan( "(C) Copyright 2012 by Timo Furrer <timo.furrer@gmail.com>"))
 
   def AddHelpItem( self ):
     item = CLIItem( "help", self.HelpScreen, category = "default", subitems = [] )
@@ -192,7 +192,7 @@ class CLI:
       for i in sorted( items, key = lambda i: i.GetName( )):
         f = i.GetFunction( )
         if f is not None:
-          sys.stdout.write( indent + Colorful.bold_green( i.GetName( )) + " " * ( max_len_name - len( i.GetName( ))))
+          sys.stdout.write( indent + cf.bold_green( i.GetName( )) + " " * ( max_len_name - len( i.GetName( ))))
           sys.stdout.write( space + i.GetUsage( ) + " " * ( max_len_usage - len( i.GetUsage( ))))
           sys.stdout.write( space + i.GetHelpText( ) + "\n" )
     else:
@@ -201,10 +201,10 @@ class CLI:
         if item.IsEnabled( ):
           f = item.GetFunction( )
           if f is not None:
-            print( indent + Colorful.bold_green( item.GetName( )) + space + item.GetUsage( ) + space + item.GetHelpText( ))
+            print( indent + cf.bold_green( item.GetName( )) + space + item.GetUsage( ) + space + item.GetHelpText( ))
           else:
-            print( Colorful.bold_red( "Command has no function defined, so no help could be showed" ))
+            print( cf.bold_red( "Command has no function defined, so no help could be showed" ))
         else:
-          print( Colorful.bold_red( "Command can not be found" ))
+          print( cf.bold_red( "Command can not be found" ))
       else:
-        print( Colorful.bold_red( "Command can not be found" ))
+        print( cf.bold_red( "Command can not be found" ))
