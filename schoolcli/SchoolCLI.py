@@ -494,7 +494,7 @@ class SchoolCLI( CLI ):
       if last_special:
         row = rows[-1]
         print( " " * 2 + "-" * (max_len_first_col + max_len_second_col + len( space ) + len( wall ) + 1 + 4 ))
-        print( indent + row["key"] + " " * (max_len_first_col - len( row["key"] )) + space + wall + " " + str( row["value"] ) + " " * (max_len_second_col - len( str( row["value"] ))))
+        print( indent + Colorful.bold_green( row["key"] ) + " " * (max_len_first_col - len( row["key"] )) + space + wall + " " + str( row["value"] ) + " " * (max_len_second_col - len( str( row["value"] ))))
 
   def cmd_school( self, item, args, rawline ):
     """<add|remove>||add or remove a school"""
