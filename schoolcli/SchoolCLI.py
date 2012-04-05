@@ -104,13 +104,13 @@ class SchoolCLI( CLI ):
         for cd in cds:
           item.AppendItem( cd )
       elif index == 1:
-        for cd in [i for i in cds if i.GetName( ) == self._ls.GetCurrentLocationValue( ).Name]:
-          for subcd in cd.GetSubitems( ):
+        for cd in [i for i in cds if i.Name == self._ls.GetCurrentLocationValue( ).Name]:
+          for subcd in cd.Subitems:
             item.AppendItem( subcd )
       elif index == 2:
-        for cd in [i for i in cds if i.GetName( ) == self._ls.GetLocationValueAt( 0 ).Name]:
-          for subcd in [i for i in cd.GetSubitems( ) if i.GetName( ) == self._ls.GetLocationValueAt( 1 ).Name]:
-            for subsubcd in subcd.GetSubitems( ):
+        for cd in [i for i in cds if i.Name == self._ls.GetLocationValueAt( 0 ).Name]:
+          for subcd in [i for i in cd.Subitems if i.Name == self._ls.GetLocationValueAt( 1 ).Name]:
+            for subsubcd in subcd.Subitems:
               item.AppendItem( subsubcd )
 
   def SetupDatabase( self ):
