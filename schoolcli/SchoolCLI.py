@@ -4,6 +4,9 @@ import os
 import sqlite3
 import argparse
 import time
+import sys
+
+sys.path.insert( 0, os.path.join( os.path.dirname( os.path.abspath( __file__ )), "cli-core/src/" )) # Need for the CLI core files
 
 from CLI         import *
 from School      import *
