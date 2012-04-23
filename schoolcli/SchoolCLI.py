@@ -169,7 +169,7 @@ class SchoolCLI( CLI ):
     self._connection.commit( )
     c.close( )
 
-    print( cf.bold_green( "Connected to valid database at path `{}`".format( self._database )))
+    cf.out.bold_green( "Connected to valid database at path `{}`".format( self._database ))
 
   def PrintSchoolTable( self, schools ):
     indent = " " * 4
@@ -188,7 +188,7 @@ class SchoolCLI( CLI ):
       for school in schools:
         print( indent + str( school.Id ) + " " * (max_len_id - len( str( school.Id ))) + space + wall + " " + school.Name )
     else:
-      print( cf.bold_green( "There are no schools" ))
+      cf.out.bold_green( "There are no schools" )
 
   def PrintTermTable( self, terms ):
     indent = " " * 4
@@ -210,7 +210,7 @@ class SchoolCLI( CLI ):
         sys.stdout.write( indent + str( term.Id ) + " " * (max_len_id - len( str( term.Id ))) + space + wall + " " )
         print( term.School.Name + " " * (max_len_school_name - len( term.School.Name )) + space + wall + " " + term.Name )
     else:
-      print( cf.bold_green( "There are no terms" ))
+      cf.out.bold_green( "There are no terms" )
 
   def PrintSubjectTable( self, subjects ):
     indent = " " * 4
@@ -232,7 +232,7 @@ class SchoolCLI( CLI ):
         sys.stdout.write( indent + str( subject.Id ) + " " * (max_len_id - len( str( subject.Id ))) + space + wall + " " )
         print( subject.Name + " " * (max_len_name - len( subject.Name )) + space + wall + " " + subject.Shortcut )
     else:
-      print( cf.bold_green( "There are no subjects" ))
+      cf.out.bold_green( "There are no subjects" )
 
   def PrintMarkTable( self, marks ):
     indent = " " * 4
@@ -291,7 +291,7 @@ class SchoolCLI( CLI ):
         sys.stdout.write( avarage_output + " " * (max_len_avarage - avarage_len) + space + wall + " " )
         print( date_output + " " * (max_len_date - date_len))
     else:
-      print( cf.bold_green( "There are no marks" ))
+      cf.out.bold_green( "There are no marks" )
 
   def cmd_cd( self, item, args, rawline ):
     """[location|..]||change current location. You can go into schools, terms and subjects"""
@@ -317,19 +317,19 @@ class SchoolCLI( CLI ):
             if school is not None:
               self._ls.AppendLocation( station, school )
             else:
-              print( cf.bold_red( "Could not change location because the school with the name `{}` could not be found".format( station )))
+              cf.out.bold_red( "Could not change location because the school with the name `{}` could not be found".format( station ))
           elif index == 1:
             term = Term.GetTermByName( self._connection, station )
             if term is not None:
               self._ls.AppendLocation( station, term )
             else:
-              print( cf.bold_red( "Could not change location because the term with the name `{}` could not be found".format( args )))
+              cf.out.bold_red( "Could not change location because the term with the name `{}` could not be found".format( args ))
           elif index == 2:
             termsubject = Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._ls.GetCurrentLocationValue( ), Subject.GetSubjectByShortcut( self._connection, station ))
             if termsubject is not None: #FIXME: Does not work yet!
               self._ls.AppendLocation( station, termsubject )
             else:
-              print( cf.bold_red( "Could not change location because the subject with the shortcut `{}` could not be found".format( args )))
+              cf.out.bold_red( "Could not change location because the subject with the shortcut `{}` could not be found".format( args ))
 
     index = self._ls.GetHierarchyIndex( )
     CLI.SetItemsEnabled( self, False )
@@ -530,10 +530,10 @@ class SchoolCLI( CLI ):
         school = School( self._connection )
         school.Name = name
         if school.Insert( ):
-          print( cf.bold_green( "School with name `{}` has been successfully saved!".format( name )))
+          cf.out.bold_green( "School with name `{}` has been successfully saved!".format( name ))
           self._UpdateCDCommand( )
         else:
-          print( cf.bold_red( "An error occured during the insert action of school with name `{}`".format( name )))
+          cf.out.bold_red( "An error occured during the insert action of school with name `{}`".format( name ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -550,9 +550,9 @@ class SchoolCLI( CLI ):
       available_ids = [str( s.Id ) for s in schools]
       if parsed_args.interactive:
         if len( schools ) == 0:
-          print( cf.white( "There is no school to remove" ))
+          cf.out.white( "There is no school to remove" )
         else:
-          print( cf.bold_green( "Schools you can remove:" ))
+          cf.out.bold_green( "Schools you can remove:" )
           self.PrintSchoolTable( schools )
           try:
             id = input( "Enter id of the school to be removed: " )
@@ -565,12 +565,12 @@ class SchoolCLI( CLI ):
         if id in available_ids:
           school = [s for s in schools if str( s.Id ) == id][0]
           if school.Delete( ):
-            print( cf.bold_green( "School with id `{}` has been successfully removed".format( id )))
+            cf.out.bold_green( "School with id `{}` has been successfully removed".format( id ))
             self._UpdateCDCommand( )
           else:
-            print( cf.bold_red( "An error occured during delete action of school with id `{}`".format( id )))
+            cf.out.bold_red( "An error occured during delete action of school with id `{}`".format( id ))
         else:
-          print( cf.bold_red( "School with id `{}` does not exist".format( id )))
+          cf.out.bold_red( "School with id `{}` does not exist".format( id ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -607,10 +607,10 @@ class SchoolCLI( CLI ):
         term.School = self._ls.GetCurrentLocationValue( )
         term.Name   = name
         if term.Insert( ):
-          print( cf.bold_green( "Term with name `{}` has been successfully saved for school `{}`!".format( name, term.School.Name )))
+          cf.out.bold_green( "Term with name `{}` has been successfully saved for school `{}`!".format( name, term.School.Name ))
           self._UpdateCDCommand( )
         else:
-          print( cf.bold_red( "An error occured during the insert action of term with name `{}`".format( name )))
+          cf.out.bold_red( "An error occured during the insert action of term with name `{}`".format( name ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -627,9 +627,9 @@ class SchoolCLI( CLI ):
       available_ids = [str( t.Id ) for t in terms]
       if parsed_args.interactive:
         if len( terms ) == 0:
-          print( cf.white( "There is no term to remove" ))
+          cf.out.white( "There is no term to remove" )
         else:
-          print( cf.bold_green( "Terms you can remove:" ))
+          cf.out.bold_green( "Terms you can remove:" )
           self.PrintTermTable( terms )
           try:
             id = input( "Enter id of the term to be removed: " )
@@ -642,12 +642,12 @@ class SchoolCLI( CLI ):
         if id in available_ids:
           term = [t for t in terms if str( t.Id ) == id][0]
           if term.Delete( ):
-            print( cf.bold_green( "Term with id `{}` has been successfully removed".format( id )))
+            cf.out.bold_green( "Term with id `{}` has been successfully removed".format( id ))
             self._UpdateCDCommand( )
           else:
-            print( cf.bold_red( "An error occured during delete action of term with id `{}`".format( id )))
+            cf.out.bold_red( "An error occured during delete action of term with id `{}`".format( id ))
         else:
-          print( cf.bold_red( "Term with id `{}` does not exist".format( id )))
+          cf.out.bold_red( "Term with id `{}` does not exist".format( id ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -689,13 +689,13 @@ class SchoolCLI( CLI ):
         subject.Name     = name
         subject.Shortcut = shortcut
         if subject.Insert( ):
-          print( cf.bold_green( "Subject with name `{} ({})` has been successfully saved!".format( name, shortcut )))
-          print( cf.white( "If you want to link this subject with the current term you have to execute `subject link`" ))
+          cf.out.bold_green( "Subject with name `{} ({})` has been successfully saved!".format( name, shortcut ))
+          cf.out.white( "If you want to link this subject with the current term you have to execute `subject link`" )
           self._UpdateCDCommand( )
         else:
-          print( cf.bold_red( "An error occured during the insert action of subject with name `{}`".format( name )))
+          cf.out.bold_red( "An error occured during the insert action of subject with name `{}`".format( name ))
       elif parsed_args.name is None or parsed_args.name == "" or parsed_args.shortcut is None or parsed_args.shortcut == "":
-        print( cf.bold_red( "You have to pass a name with -n and a shortcut with -s to save a subject else you can choose -i for interactive mode" ))
+        cf.out.bold_red( "You have to pass a name with -n and a shortcut with -s to save a subject else you can choose -i for interactive mode" )
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -712,9 +712,9 @@ class SchoolCLI( CLI ):
       available_ids = [str( s.Id ) for s in subjects]
       if parsed_args.interactive:
         if len( subjects ) == 0:
-          print( cf.white( "There are no subjects to remove" ))
+          cf.out.white( "There are no subjects to remove" )
         else:
-          print( cf.bold_green( "Subjects you can remove:" ))
+          cf.out.bold_green( "Subjects you can remove:" )
           self.PrintSubjectTable( subjects )
           try:
             id = input( "Enter id of the subject to be removed: " )
@@ -727,12 +727,12 @@ class SchoolCLI( CLI ):
         if id in available_ids:
           subject = [s for s in subjects if str( s.Id ) == id][0]
           if subject.Delete( ):
-            print( cf.bold_green( "Subject with id `{}` has been successfully removed".format( id )))
+            cf.out.bold_green( "Subject with id `{}` has been successfully removed".format( id ))
             self._UpdateCDCommand( )
           else:
-            print( cf.bold_red( "An error occured during delete action of subject with id `{}`".format( id )))
+            cf.out.bold_red( "An error occured during delete action of subject with id `{}`".format( id ))
         else:
-          print( cf.bold_red( "Subject with id `{}` does not exist".format( id )))
+          cf.out.bold_red( "Subject with id `{}` does not exist".format( id ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -751,9 +751,9 @@ class SchoolCLI( CLI ):
       if parsed_args.interactive:
         try:
           if len( subjects ) == 0:
-            print( cf.white( "There are no subjects you can link with the current term" ))
+            cf.out.white( "There are no subjects you can link with the current term" )
           else:
-            print( cf.bold_green( "Subjects you can link: "))
+            cf.out.bold_green( "Subjects you can link: ")
             self.PrintSubjectTable( subjects )
             subjectid = input( "Enter id of the subject to link: " )
             save      = input( "Do you want to save ([y]/n)? " )
@@ -813,9 +813,9 @@ class SchoolCLI( CLI ):
             print( cf.bold_green( "Subject with id `{}` has been successfully unlinked".format( id )))
             self._UpdateCDCommand( )
           else:
-            print( cf.bold_red( "An error occured during unlinking of subject with id `{}`".format( id )))
+            cf.out.bold_red( "An error occured during unlinking of subject with id `{}`".format( id ))
         else:
-          print( cf.bold_red( "Subject with id `{}` does not exist".format( id )))
+          cf.out.bold_red( "Subject with id `{}` does not exist".format( id ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
 
@@ -878,10 +878,10 @@ class SchoolCLI( CLI ):
       mark.Avarage     = avarage
       mark.Date        = date
       if mark.Insert( ):
-        print( cf.bold_green( "This mark has been successfully saved!" ))
+        cf.out.bold_green( "This mark has been successfully saved!" )
         self._UpdateCDCommand( )
       else:
-        print( cf.bold_red( "An error occured during the insert action of the mark" ))
+        cf.out.bold_red( "An error occured during the insert action of the mark" )
 
   def cmd_mark_remove( self, item, args, rawline ):
     """-s <id>|-i||remove a mark by id or in interactive mode"""
@@ -896,9 +896,9 @@ class SchoolCLI( CLI ):
       available_ids = [str( m.Id ) for m in marks]
       if parsed_args.interactive:
         if len( marks ) == 0:
-          print( cf.white( "There are no marks to remove" ))
+          cf.out.white( "There are no marks to remove" )
         else:
-          print( cf.bold_green( "Marks you can remove:" ))
+          cf.out.bold_green( "Marks you can remove:" )
           self.PrintMarkTable( marks )
           try:
             id = input( "Enter id of the mark to be removed: " )
@@ -911,11 +911,11 @@ class SchoolCLI( CLI ):
         if id in available_ids:
           mark = [m for m in marks if str( m.Id ) == id][0]
           if mark.Delete( ):
-            print( cf.bold_green( "Mark with id `{}` has been successfully removed".format( id )))
+            cf.out.bold_green( "Mark with id `{}` has been successfully removed".format( id ))
             self._UpdateCDCommand( )
           else:
-            print( cf.bold_red( "An error occured during delete action of mark with id `{}`".format( id )))
+            cf.out.bold_red( "An error occured during delete action of mark with id `{}`".format( id ))
         else:
-          print( cf.bold_red( "Mark with id `{}` does not exist".format( id )))
+          cf.out.bold_red( "Mark with id `{}` does not exist".format( id ))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
