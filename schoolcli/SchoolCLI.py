@@ -45,7 +45,6 @@ class SchoolCLI( CLI ):
 
   def AddDefaultCommands( self ):
     CLI.AddHelpItem( self )
-    CLI.RegisterItem( self, CLIItem( "exit", self.cmd_exit, category = "default", subitems = [] ))
     CLI.RegisterItem( self, CLIItem( "cd", self.cmd_cd, category = "default", subitems = [] ))
     CLI.RegisterItem( self, CLIItem( "ls", self.cmd_ls, category = "default", subitems = [] ))
     CLI.RegisterItem( self, CLIItem( "pwd", self.cmd_pwd, category = "default", subitems = [] ))
@@ -89,13 +88,13 @@ class SchoolCLI( CLI ):
       cds = []
       schools = [s for s in School.GetSchools( self._connection )]
       for school in schools:
-        schoolitem = CLIItem( school.Name, value = school.Name, split_char = "/", category = "default", subitems = [] )
+        schoolitem = CLIItem( school.Name, value = school.Name, tab_delimiter = "/", category = "default", subitems = [] )
         terms = [t for t in Term.GetTermsBySchool( self._connection, school )]
         for term in terms:
-          termitem = CLIItem( term.Name, value = term.Name, split_char = "/", category = "default", subitems = [] )
+          termitem = CLIItem( term.Name, value = term.Name, tab_delimiter = "/", category = "default", subitems = [] )
           subjects = [s for s in Subject.GetSubjectsByTerm( self._connection, term )]
           for subject in subjects:
-            subjectitem = CLIItem( subject.Shortcut, value = subject.Shortcut, split_char = "/", category = "default" )
+            subjectitem = CLIItem( subject.Shortcut, value = subject.Shortcut, tab_delimiter = "/", category = "default" )
             termitem.AppendItem( subjectitem )
           schoolitem.AppendItem( termitem )
         cds.append( schoolitem )
@@ -303,9 +302,9 @@ class SchoolCLI( CLI ):
     elif args == "..":
       self._ls.GoOneBack( )
     else:
-      if args.split( self._ls.Splitter )[0] == "/":
+      if args.split( self._ls.Delimiter )[0] == "/":
         self._ls.GoToRoot( )
-      stations = [s for s in args.split( self._ls.Splitter ) if s != ""]
+      stations = [s for s in args.split( self._ls.Delimiter ) if s != ""]
       for station in stations:
         if station == "..":
           self._ls.GoOneBack( )
@@ -920,9 +919,3 @@ class SchoolCLI( CLI ):
           print( cf.bold_red( "Mark with id `{}` does not exist".format( id )))
     except SystemExit:       # Do not exit cli if an error occured in parse_args
       pass
-
-  def cmd_exit( self, item, args, rawline ):
-    """exit from the schoolcli"""
-    y = input( "Do you really want to exit ([y]/n)? " )
-    if y == "y" or y == "":
-      CLI.Stop( self )
