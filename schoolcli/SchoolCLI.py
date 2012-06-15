@@ -20,7 +20,7 @@ class SchoolCLI( CLI ):
 
   _database   = None
 
-  def __init__( self, prompt = "School:{}> ", database = path.join( os.getenv( "HOME" ), ".schoolcli.db" )):
+  def __init__( self, prompt = "School:{}> ", database = os.path.join( os.getenv( "HOME" ), ".schoolcli.db" )):
     CLI.__init__( self, "~/.schoolcli_history" )
     CLI.SetWelcomeText( self, "Welcome to schoolcli version 0.00.01" )
     CLI.SetPrompt( self, prompt )
@@ -32,7 +32,7 @@ class SchoolCLI( CLI ):
     self.AddMarkCommands( )
 
     CLI.SetItemsEnabled( self, False )
-    CLI.SetItemsEnabledByCategory( self, "school" )
+    CLI.SetItemsEnabledByCategories( self, "school" )
 
     self._database = database
 
@@ -44,10 +44,6 @@ class SchoolCLI( CLI ):
     self._connection.close( )
 
   def AddDefaultCommands( self ):
-    CLI.AddHelpItem( self )
-    CLI.RegisterItem( self, CLIItem( "cd", self.cmd_cd, category = "default", subitems = [] ))
-    CLI.RegisterItem( self, CLIItem( "ls", self.cmd_ls, category = "default", subitems = [] ))
-    CLI.RegisterItem( self, CLIItem( "pwd", self.cmd_pwd, category = "default", subitems = [] ))
     CLI.RegisterItem( self, CLIItem( "avg", self.cmd_avg, category = "default", subitems = [] ))
     self._UpdateCDCommand( )
 
@@ -80,7 +76,7 @@ class SchoolCLI( CLI ):
   def _UpdateCDCommand( self ):
     item            = CLI.GetItemByName( self, "cd" )
     if item is not None:
-      index = self._ls.GetHierarchyIndex( )
+      index = self._location.GetHierarchyIndex( )
       item.ClearItems( )
       item.AppendItem( CLIItem( "/", value = "/", category = "default" ))
       item.AppendItem( CLIItem( "..", value = "..", category = "default" ))
@@ -103,12 +99,12 @@ class SchoolCLI( CLI ):
         for cd in cds:
           item.AppendItem( cd )
       elif index == 1:
-        for cd in [i for i in cds if i.Name == self._ls.GetCurrentLocationValue( ).Name]:
+        for cd in [i for i in cds if i.Name == self._location.GetCurrentLocationValue( ).Name]:
           for subcd in cd.Subitems:
             item.AppendItem( subcd )
       elif index == 2:
-        for cd in [i for i in cds if i.Name == self._ls.GetLocationValueAt( 0 ).Name]:
-          for subcd in [i for i in cd.Subitems if i.Name == self._ls.GetLocationValueAt( 1 ).Name]:
+        for cd in [i for i in cds if i.Name == self._location.GetLocationValueAt( 0 ).Name]:
+          for subcd in [i for i in cd.Subitems if i.Name == self._location.GetLocationValueAt( 1 ).Name]:
             for subsubcd in subcd.Subitems:
               item.AppendItem( subsubcd )
 
@@ -295,73 +291,75 @@ class SchoolCLI( CLI ):
 
   def cmd_cd( self, item, args, rawline ):
     """[location|..]||change current location. You can go into schools, terms and subjects"""
-    index = self._ls.GetHierarchyIndex( )
+    index = self._location.GetHierarchyIndex( )
     args = args.strip( )
     if args == "" or args == "/":
-      self._ls.GoToRoot( )
+      self._location.GoToRoot( )
     elif args == "..":
-      self._ls.GoOneBack( )
+      self._location.GoOneBack( )
+    elif args == "-":
+      self._location.GoToLastLocation( )
     else:
-      if args.split( self._ls.Delimiter )[0] == "/":
-        self._ls.GoToRoot( )
-      stations = [s for s in args.split( self._ls.Delimiter ) if s != ""]
+      if args.split( self._location.Delimiter )[0] == "/":
+        self._location.GoToRoot( )
+      stations = [s for s in args.split( self._location.Delimiter ) if s != ""]
       for station in stations:
         if station == "..":
-          self._ls.GoOneBack( )
+          self._location.GoOneBack( )
         elif station == ".":
           pass
         else:
-          index = self._ls.GetHierarchyIndex( )
+          index = self._location.GetHierarchyIndex( )
           if index == 0:
             school = School.GetSchoolByName( self._connection, station )
             if school is not None:
-              self._ls.AppendLocation( station, school )
+              self._location.AppendLocation( station, school )
             else:
               cf.out.bold_red( "Could not change location because the school with the name `{}` could not be found".format( station ))
           elif index == 1:
             term = Term.GetTermByName( self._connection, station )
             if term is not None:
-              self._ls.AppendLocation( station, term )
+              self._location.AppendLocation( station, term )
             else:
               cf.out.bold_red( "Could not change location because the term with the name `{}` could not be found".format( args ))
           elif index == 2:
-            termsubject = Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._ls.GetCurrentLocationValue( ), Subject.GetSubjectByShortcut( self._connection, station ))
+            termsubject = Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._location.GetCurrentLocationValue( ), Subject.GetSubjectByShortcut( self._connection, station ))
             if termsubject is not None: #FIXME: Does not work yet!
-              self._ls.AppendLocation( station, termsubject )
+              self._location.AppendLocation( station, termsubject )
             else:
               cf.out.bold_red( "Could not change location because the subject with the shortcut `{}` could not be found".format( args ))
 
-    index = self._ls.GetHierarchyIndex( )
+    index = self._location.GetHierarchyIndex( )
     CLI.SetItemsEnabled( self, False )
     if index == 0:
-      CLI.SetItemsEnabledByCategory( self, "school" )
+      CLI.SetItemsEnabledByCategories( self, "school" )
     elif index == 1:
-      CLI.SetItemsEnabledByCategory( self, "term" )
+      CLI.SetItemsEnabledByCategories( self, "term" )
     elif index == 2:
-      CLI.SetItemsEnabledByCategory( self, "subject" )
+      CLI.SetItemsEnabledByCategories( self, "subject" )
     elif index == 3:
-      CLI.SetItemsEnabledByCategory( self, "mark" )
+      CLI.SetItemsEnabledByCategories( self, "mark" )
     self._UpdateCDCommand( )
 
   def cmd_ls( self, item, args, rawline ):
     """list the current location content like all schools or subjects"""
-    index = self._ls.GetHierarchyIndex( )
+    index = self._location.GetHierarchyIndex( )
     if index == 0:
       self.PrintSchoolTable( School.GetSchools( self._connection ))
     elif index == 1:
-      self.PrintTermTable( Term.GetTermsBySchool( self._connection, self._ls.GetCurrentLocationValue( )))
+      self.PrintTermTable( Term.GetTermsBySchool( self._connection, self._location.GetCurrentLocationValue( )))
     elif index == 2:
-      self.PrintSubjectTable( Subject.GetSubjectsByTerm( self._connection, self._ls.GetCurrentLocationValue( )))
+      self.PrintSubjectTable( Subject.GetSubjectsByTerm( self._connection, self._location.GetCurrentLocationValue( )))
     elif index == 3:
-      self.PrintMarkTable( Mark.GetMarksByTermsubject( self._connection, self._ls.GetCurrentLocationValue( )))
+      self.PrintMarkTable( Mark.GetMarksByTermsubject( self._connection, self._location.GetCurrentLocationValue( )))
 
   def cmd_pwd( self, item, args, rawline ):
     """print the working directory ( location )"""
-    print( self._ls.GetLocationAsText( ))
+    pass # working directory will be printed by parent
 
   def cmd_avg( self, item, args, rawline ):
     """calculate the avarage of the current location"""
-    index = self._ls.GetHierarchyIndex( )
+    index = self._location.GetHierarchyIndex( )
     indent = " " * 4
     space  = " " * 6
     wall   = "|"
@@ -394,7 +392,7 @@ class SchoolCLI( CLI ):
         rows.append( elem )
     elif index == 1:
       rows.append( { "key" : "Terms", "value" : "Avarage" } )
-      for term in Term.GetTermsBySchool( self._connection, self._ls.GetCurrentLocationValue( )):
+      for term in Term.GetTermsBySchool( self._connection, self._location.GetCurrentLocationValue( )):
         avarage   = 0.0
         valuation = 0.0
         for mark in Mark.GetMarksByTerm( self._connection, term ):
@@ -415,10 +413,10 @@ class SchoolCLI( CLI ):
         rows.append( elem )
     elif index == 2:
       rows.append( { "key" : "Subjects", "value" : "Avarage" } )
-      for subject in Subject.GetSubjectsByTerm( self._connection, self._ls.GetCurrentLocationValue( )):
+      for subject in Subject.GetSubjectsByTerm( self._connection, self._location.GetCurrentLocationValue( )):
         avarage   = 0.0
         valuation = 0.0
-        for mark in Mark.GetMarksByTermsubject( self._connection, Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._ls.GetCurrentLocationValue( ), subject )):
+        for mark in Mark.GetMarksByTermsubject( self._connection, Termsubject.GetTermsubjectByTermAndSubject( self._connection, self._location.GetCurrentLocationValue( ), subject )):
           mark_tmp      = float( mark.Mark )
           if mark.Valuation is not None and mark.Valuation != "":
             valuation_tmp = mark.Valuation
@@ -439,7 +437,7 @@ class SchoolCLI( CLI ):
       rows.append( { "key" : "Points/MaxPoints - Valuation at Date", "value" : "Mark" } )
       avarage   = 0.0
       valuation = 0.0
-      for mark in Mark.GetMarksByTermsubject( self._connection, self._ls.GetCurrentLocationValue( )):
+      for mark in Mark.GetMarksByTermsubject( self._connection, self._location.GetCurrentLocationValue( )):
         mark_tmp      = float( mark.Mark )
         if mark.Valuation is not None and mark.Valuation != "":
           valuation_tmp = mark.Valuation
@@ -604,7 +602,7 @@ class SchoolCLI( CLI ):
         save = False
       if save:
         term = Term( self._connection )
-        term.School = self._ls.GetCurrentLocationValue( )
+        term.School = self._location.GetCurrentLocationValue( )
         term.Name   = name
         if term.Insert( ):
           cf.out.bold_green( "Term with name `{}` has been successfully saved for school `{}`!".format( name, term.School.Name ))
@@ -623,7 +621,7 @@ class SchoolCLI( CLI ):
     try:
       id = None
       parsed_args = parser.parse_args( args.split( " " ))
-      terms = Term.GetTermsBySchool( self._connection, self._ls.GetCurrentLocationValue( ))
+      terms = Term.GetTermsBySchool( self._connection, self._location.GetCurrentLocationValue( ))
       available_ids = [str( t.Id ) for t in terms]
       if parsed_args.interactive:
         if len( terms ) == 0:
@@ -769,7 +767,7 @@ class SchoolCLI( CLI ):
         if subjectid in available_ids:
           termsubject         = Termsubject( self._connection )
           termsubject.Subject = Subject.GetSubjectById( self._connection, subjectid )
-          termsubject.Term    = self._ls.GetCurrentLocationValue( )
+          termsubject.Term    = self._location.GetCurrentLocationValue( )
           if termsubject.Insert( ):
             print( cf.bold_green( "Subject with name `{} ({})` has been successfully linked to term `{}`!".format( termsubject.Subject.Name, termsubject.Subject.Shortcut, termsubject.Term.Name )))
             self._UpdateCDCommand( )
@@ -789,7 +787,7 @@ class SchoolCLI( CLI ):
     try:
       id = None
       parsed_args = parser.parse_args( args.split( " " ))
-      subjects = Subject.GetSubjectsByTerm( self._connection, self._ls.GetCurrentLocationValue( ))
+      subjects = Subject.GetSubjectsByTerm( self._connection, self._location.GetCurrentLocationValue( ))
       available_ids = [str( s.Id ) for s in subjects]
       if parsed_args.interactive:
         if len( subjects ) == 0:
@@ -807,7 +805,7 @@ class SchoolCLI( CLI ):
       if id is not None:
         if id in available_ids:
           subject = [s for s in subjects if str( s.Id ) == id][0]
-          term    = self._ls.GetCurrentLocationValue( )
+          term    = self._location.GetCurrentLocationValue( )
           termsubject = Termsubject.GetTermsubjectByTermAndSubject( self._connection, term, subject )
           if termsubject.Delete( ):
             print( cf.bold_green( "Subject with id `{}` has been successfully unlinked".format( id )))
@@ -870,7 +868,7 @@ class SchoolCLI( CLI ):
       print( "" ) # To break down prompt to a new line
     if save:
       mark             = Mark( self._connection )
-      mark.Termsubject = self._ls.GetCurrentLocationValue( )
+      mark.Termsubject = self._location.GetCurrentLocationValue( )
       mark.Mark        = mark_input
       mark.Points      = points
       mark.MaxPoints   = max_points
@@ -892,7 +890,7 @@ class SchoolCLI( CLI ):
     try:
       id = None
       parsed_args = parser.parse_args( args.split( " " ))
-      marks = Mark.GetMarksByTermsubject( self._connection, self._ls.GetCurrentLocationValue( ))
+      marks = Mark.GetMarksByTermsubject( self._connection, self._location.GetCurrentLocationValue( ))
       available_ids = [str( m.Id ) for m in marks]
       if parsed_args.interactive:
         if len( marks ) == 0:
